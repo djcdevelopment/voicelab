@@ -2,8 +2,8 @@
 
 G0–G2 have running evidence. G3 has real local speech and timing/resource evidence,
 but intelligibility, pronunciation and acting quality await operator listening.
-G4 is a bounded plan, not a host compatibility result.
-Local machine details remain in ignored `output/RECEIPTS/initial-20261010-01/`.
+G4 now has a Kokoro CPU feasibility result; Fish XPU remains a plan, not a host compatibility result.
+Local machine details remain in ignored receipts `initial-20261010-01` and `cpu-ab-20261010-01`.
 
 The extracted checkout is the session workspace; the requested `/work/subtitle`
 was empty. Work stayed in the existing checkout. No existing service was changed.
@@ -28,7 +28,7 @@ Keep original stems, measure overflow, and never silently cut or shorten speech.
 | Candidate | Evidence and expressive potential | Speakers/timing | Resources and friction | License/fallback |
 |---|---|---|---|---|
 | OHF Piper | Ran on host; plain voice, listening pending | One chosen voice; upstream speaker IDs and length_scale; no hard duration guarantee | CPU baseline; isolated ONNX runtime. Fast wall time but default ONNX threading used substantial aggregate CPU | GPL-3.0 implementation; each voice has separate provenance. Lessac card links a research dataset agreement, not a universal voice grant. Keep local; review before distribution |
-| Kokoro-82M | Documented upstream; plausible lighter quality improvement, acting unproven here | Stock voices/blends, speed parameter; no exact timing or character identity guarantee | 82M parameters; CPU trial first. Torch/G2P/espeak dependencies; actual RAM/VRAM/speed unmeasured | Apache-2.0 weights; use stock voices and wav-dir; Piper fallback |
+| Kokoro-82M | Ran on host CPU with two stock voices; acting/listening unassessed | Alternate Heart/Michael cues, speed 1.0; no exact duration or inferred identity | Two-core mean generation RTF 0.2521; observed bench RSS 1928.6 MiB. Isolated Torch/Misaki/espeakng-loader; six >250 ms overruns per set | Apache-2.0 weights; integrated through wav-dir; Piper fallback |
 | Fish S2 Pro | Upstream inline prosody/emotion and multi-speaker support; strongest expressive research lead | Reference-controlled speakers and instruction tags; strict cue-duration control unproven | Upstream 24 GB inference VRAM and XPU nightly installation route. Host cards occupied; no inference attempted. Compiler/runtime compatibility remains unproven | Fish Audio Research License permits research/noncommercial use subject to terms; separate commercial license. No cloud fallback |
 
 Sources checked this session: [Piper HTTP](https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/API_HTTP.md),
@@ -40,6 +40,25 @@ Sources checked this session: [Piper HTTP](https://github.com/OHF-Voice/piper1-g
 [Fish license](https://huggingface.co/fishaudio/s2-pro/blob/main/LICENSE.md).
 Source snapshots and checksums are local. Vendor quality/speed claims are not
 host measurements. No model-memory pooling is assumed.
+
+## Latest CPU slice
+
+The follow-up completed Piper CPU bounding and a Kokoro feasibility comparison.
+A taskset-only Piper attempt failed its resource bound and is preserved. Explicit
+ONNX worker/thread/spinning settings reduced server CPU to 27.22 core-seconds;
+all sampled worker masks stayed within two selected CPUs. Piper mean generation
+RTF was 0.0316; Kokoro was 0.2521. Both completed three warmups and ten measured
+whole-set repetitions, with no synthesis errors. Kokoro spoke longer (46.70 s
+versus about 35 s) and had six >250 ms window overruns versus Piper's three to
+five. No next-start overlap or mixed clipping in measured sets. Timing remains
+unsolved. CPU/RSS measurement scopes differ and runs were sequential; this is
+not a quality ranking. See `docs/CPU-VOICE-COMPARISON.md` for definitions.
+
+Listening player with complete URLs: http://127.0.0.1:18574/ . It offers MP3
+listening copies and original WAV downloads. Server responses and decode were
+checked; operator confirmed successful audio playback. Qualitative ratings remain pending.
+No machine audio settings were changed. Blank listener scores stay blank until
+an actual verdict; put annotations in a fresh receipt, preserving sealed runs.
 
 ## Bounded A/B protocol
 
@@ -91,16 +110,15 @@ Live pause/seek reconciliation waits until the offline chain passes listening.
 
 ## Three next work items
 
-1. **Listen and bound Piper CPU (low complexity, low risk; 15–30 min).** Listen to
-   demo and measured-01; annotate all 20 cues. Restrict only the new Piper process
-   to two available CPU cores or upstream session thread settings, then repeat
-   the same benchmark in a fresh receipt. Accept if speech is intelligible,
-   no words are cut, and CPU contention and RTF are measured. Reject convincing
-   dubbing claims if acting/timing fails even when functional speech passes.
-2. **Kokoro CPU A/B (medium complexity, moderate dependency risk; 30–60 min).**
-   Isolated environment, two stock English voices, WAV-directory integration.
-   Accept only with 3+10 same-set runs, hashes, listening judgments and duration
-   evidence. Stop on unavailable dependency or bounded setup failure; retain Piper.
+1. **Listen and score (low complexity; about 15 min).** Use the complete
+   player URL, listen to all 20 cues, and copy the scoring sheet to a fresh receipt.
+   Accept only with intelligibility/pronunciation, acting and speaker-consistency
+   judgments. CPU bounding is completed; no longer a prerequisite to rerun.
+2. **One timing lever (low/medium complexity; about 20 min after listening passes).**
+   Compare Kokoro speed 1.0 versus 1.15 on the same fixed text/windows, preserving
+   original WAVs. Measure duration/overrun and listener degradation. Accept only
+   if the faster rendition improves timing without omitted or audibly cut words.
+   No silent edits; a subtitle window is not a true dialogue window.
 3. **One-card Fish XPU feasibility (medium/high risk; 15-min smoke once capacity exists).**
    First recheck workload pressure and device mapping; do not free resources by
    changing existing services. One line, compile disabled initially, no casting
@@ -108,5 +126,5 @@ Live pause/seek reconciliation waits until the offline chain passes listening.
    latency and memory evidence. Then schedule the 20-cue A/B. Current verdict:
    NO-GO for loading Fish alongside the occupied cards.
 
-GO for listening/CPU discipline and a bounded lighter-voice comparison. NO-GO for
+GO for listening judgments and then one measured timing lever. NO-GO for
 live streaming, character-aware dubbing claims or soundtrack separation yet.

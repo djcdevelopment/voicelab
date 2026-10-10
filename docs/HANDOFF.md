@@ -1,62 +1,118 @@
-# Subtitle Lab handoff — 2026-10-10
+# Subtitle Lab handoff — 2026-10-10, CPU voice slice
 
-Work was performed in the existing session checkout. `/work/subtitle` was empty;
-no second repo was created. Local commits preserve the starter, a metadata parser
-repair/20-cue CPU bench, and this research handoff. Nothing was pushed.
+The existing session checkout remains the repo. No second repo was created and
+nothing was pushed. Synthetic subtitle → real local speech → timed WAV works
+with Piper and Kokoro. Listening quality and true dialogue timing remain pending.
 
-## Reproduce
+## Listen using complete URLs
 
-From the checkout root:
+Open this player in Firefox on the Linux workstation and press Play:
+
+**http://127.0.0.1:18574/**
+
+Direct files:
+
+- Piper MP3: http://127.0.0.1:18574/A/track.mp3
+- Kokoro MP3: http://127.0.0.1:18574/B/track.mp3
+- Piper original WAV: http://127.0.0.1:18574/A/track.wav
+- Kokoro original WAV: http://127.0.0.1:18574/B/track.wav
+- Listener scores (copy before editing): http://127.0.0.1:18574/scores.csv
+
+The player is served by this session's Python static server. To restart it after
+that process ends, run from the checkout root (use a free port if occupied):
+
+```bash
+python3 -m http.server 18574 --bind 127.0.0.1 --directory "$PWD/output/RECEIPTS/cpu-ab-20261010-01/listening"
+```
+
+Complete local paths for the measured tracks:
+
+```text
+/home/derek/work/subtitles/output/RECEIPTS/cpu-ab-20261010-01/piper-session-bounded/measured-01/dub.wav
+/home/derek/work/subtitles/output/RECEIPTS/cpu-ab-20261010-01/kokoro/measured-01/render/dub.wav
+```
+
+Dialogue begins after 0.5 seconds; timeline gaps are intentional. MP3 listening
+copies preserve the original measured WAVs. HTTP and decoder checks passed;
+Direct WAV opening was initially reported problematic; the MP3 player with explicit controls was then confirmed to play audio successfully.
+No workstation audio routing was changed.
+
+## Reproduce the bounded benchmarks
+
+From the checkout root, preserve the no-dependency path:
 
 ```bash
 ./scripts/smoke.sh
-PYTHONPATH=src python3 -m subtitle_lab doctor --out output/doctor-new.json
-UV_CACHE_DIR=$PWD/.cache/uv uv venv --python 3.12 .venv
-UV_CACHE_DIR=$PWD/.cache/uv uv pip install --python .venv/bin/python -r output/RECEIPTS/initial-20261010-01/packages.txt
-.venv/bin/python -m piper.download_voices en_US-lessac-medium --data-dir models/piper
-# Existing env already contains this symlink; create only in a fresh env:
-.venv/bin/python -c 'import pathlib,imageio_ffmpeg; pathlib.Path(".venv/bin/ffmpeg").symlink_to(imageio_ffmpeg.get_ffmpeg_exe())'
-.venv/bin/python scripts/bench_piper.py output/RECEIPTS/piper-new-unique
-PYTHONPATH=src python3 -m subtitle_lab validate output/RECEIPTS/piper-new-unique/measured-01
+.venv/bin/python scripts/bench_piper.py output/RECEIPTS/piper-next-unique
+.venv-kokoro/bin/python scripts/bench_kokoro.py output/RECEIPTS/kokoro-next-unique
 ```
 
-The bench refuses existing output directories, checks port 18573 is free, starts
-only its own CPU Piper on loopback, and terminates its own server in finally.
-It records startup, a cold five-cue demo, three full-set warmups and ten measured
-20-cue renders. FFmpeg is isolated via imageio-ffmpeg; no system packages changed.
-The benchmark currently leaves ONNX's default thread pool intact; two OpenMP
-threads do not bound ONNX Runtime CPU use. Address this before longer runs.
+Each runner refuses an existing destination and selects two CPUs from the current
+allowed affinity. Override with `--cpus 4,5` only if that pair is allowed. Piper
+starts only its own loopback HTTP server on 18573 and terminates it in finally.
+Its process-local ONNX shim sets two intra-op workers, one inter-op worker,
+sequential execution and no idle spinning. Both runners sample all worker masks
+and reject observed affinity escape. No cgroups, drivers or existing services
+were changed.
 
-## Evidence and limits
+Piper environment/voice installation was recorded in the initial handoff receipt;
+FFmpeg is provided only inside `.venv` by imageio-ffmpeg. Packages are pinned
+locally in `output/RECEIPTS/cpu-ab-20261010-01/piper-packages.txt`.
+For Kokoro, the successful isolated installation was:
 
-Receipt: `output/RECEIPTS/initial-20261010-01/` (local, ignored, sealed with SHA256).
-Listen first to `piper/cold-demo/dub.wav` and `piper/measured-01/dub.wav`.
-Individual unmodified TTS stems are under each run's `stems/`.
+```bash
+UV_CACHE_DIR=$PWD/.cache/uv uv venv --python 3.12 .venv-kokoro
+UV_CACHE_DIR=$PWD/.cache/uv uv pip install --python .venv-kokoro/bin/python torch==2.14.1+cpu --index-url https://download.pytorch.org/whl/cpu
+UV_CACHE_DIR=$PWD/.cache/uv uv pip install --python .venv-kokoro/bin/python kokoro==0.9.4 soundfile==0.14.0 espeakng-loader==0.2.4
+UV_CACHE_DIR=$PWD/.cache/uv uv pip install --python .venv-kokoro/bin/python https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+HF_HOME=$PWD/.cache/huggingface HF_HUB_DISABLE_IMPLICIT_TOKEN=1 .venv-kokoro/bin/python - <<'PY'
+from huggingface_hub import snapshot_download
+snapshot_download('hexgrad/Kokoro-82M',
+    revision='f3ff3571791e39611d31c381e3a41a3af07b4987', token=False,
+    local_dir='models/kokoro', allow_patterns=['config.json', 'kokoro-v1_0.pth',
+    'voices/af_heart.pt', 'voices/am_michael.pt', 'README.md', 'VOICES.md', 'LICENSE*'])
+PY
+```
 
-- Original 12-test smoke passed; 13 tests pass after preventing WebVTT metadata
-  timing examples from becoming speech. SRT/VTT/ASS tone/checksum paths pass.
-- Piper 1.8.0, ONNX Runtime 1.31.0, Lessac medium produced actual speech WAVs.
-  22,050 Hz stems are converted to the harness's 24,000 Hz mono PCM16 mix.
-- Startup 1.006 s; cold demo generation 0.227 s, pipeline 0.521 s for 13.816 s
-  utterances. These are startup/first-run measurements, not cleared OS disk caches.
-- Ten warm sets: mean generation RTF 0.02097, mean pipeline RTF 0.04476,
-  median pipeline 1.551 s. Every warm run has 3–4 overruns >250 ms; no next-start
-  overlaps >250 ms or mixed clipping. Cold demo has one overrun and overlap.
-- Observed server peak RSS 269.43 MiB; server CPU 470.11 core-seconds across
-  about 21.64 observed seconds. This is substantial CPU use, not a two-core run.
-  Client/mixer CPU and peak combined RSS were not measured. Piper used CPU;
-  no incremental Piper VRAM allocation was measured or needed.
-- PyTorch XPU enumeration succeeded read-only in the existing environment;
-  exact local names, memory, versions, filters and separate xpu-smi iGPU evidence
-  are in doctor JSON and GPU files. No torch package was added to the speech env.
-- Two existing GPU serving workloads occupy most discrete memory. Fish was not
-  installed or run. Upstream XPU instructions are not a B70 compatibility proof.
-- No listening was performed: pronunciation, intelligibility and acting remain
-  unassessed. G3 functional audio path works; full qualitative gate is pending.
-- Character casting, duration fitting, source separation, soundtrack mix,
-  caption acquisition and synchronized playback remain unimplemented.
+The complete resolved versions are in `kokoro-packages-final.txt` in the receipt;
+the commands above pin principal packages but are not a full dependency lock.
+No system espeak installation was needed: upstream Misaki uses espeakng-loader.
+The benchmark enforces offline model access after preparation and explicitly
+selects CPU. Stock voices alternate on odd/even cues at speed 1.0, seed 42 per cue.
+It writes external WAV stems then uses the existing wav-dir adapter. Its render
+manifest generation time is **import time**, not Kokoro synthesis time; use
+`synthesis.json` and `benchmark.json` for actual generation latency/RTF.
 
-Exact next experiment: operator listens and labels the 20 cues, then constrain
-only a new Piper process to two CPU cores and rerun this benchmark in a fresh
-receipt. Proceed to Kokoro CPU A/B if listening establishes a useful baseline.
-See FRONTIER-PLAN.md for the complete protocol and three acceptance gates.
+## What the evidence says
+
+All 13 tests pass before and after changes. Both engines completed 3 whole-set
+warmups plus 10 measured 20-cue runs without synthesis failure or retries.
+All 42 manifests in the new receipt validate, including the failed resource-bound
+attempt's valid audio outputs. The failure was resource discipline, not synthesis.
+
+Piper: mean generation RTF 0.0316, median set wall 1.532 s, observed server RSS
+250.6 MiB, full-run server CPU 27.22 s. The old default used 470.11 core-seconds;
+a taskset-only attempt still used 419.47, so it is explicitly recorded as failed.
+
+Kokoro: mean generation RTF 0.2521, median set wall 12.129 s, observed full-process
+RSS 1928.6 MiB. The 20 cues contain 46.70 seconds of generated speech, versus
+Piper's roughly 35 seconds. Kokoro has six >250 ms overruns per measured set;
+Piper has three to five. Neither measured timed mix clips or overlaps the next
+cue start. Piper PCM endpoint values occur after upstream peak normalization;
+that alone does not prove audible distortion. No audio was cut to fit.
+
+These were sequential feasibility runs with different measurement scopes and
+single/two-voice casting, not a blinded quality verdict. Pronunciation, expression,
+intelligibility and speaker continuity remain unassessed. Fish, subtitle capture,
+character inference, duration fitting, source separation and synchronized
+playback remain unproven/unimplemented.
+
+Full evidence: `output/RECEIPTS/cpu-ab-20261010-01/` (sealed locally); original
+receipt `output/RECEIPTS/initial-20261010-01/` remains unchanged.
+See `docs/CPU-VOICE-COMPARISON.md` for the metric definitions and limitations.
+
+Exact next experiment: listen to all 20 cues and annotate
+intelligibility/pronunciation/acting and two-voice consistency. If useful speech
+passes, compare Kokoro speed 1.0 versus 1.15 on the same cues in a fresh receipt;
+measure every duration change and assess degradation, with no truncation. Do not
+advance to live acquisition or claim convincing dubbing until listening passes.
