@@ -9,7 +9,7 @@ Machine details remain in ignored receipts, including `bench-build-20261010-01`.
 
 The extracted checkout is the session workspace; the requested `/work/subtitle`
 was empty. Work stayed in the existing checkout. No existing service was changed.
-The original smoke passed 12 tests; the latest suite contains 32 tests; optional integrations skip on a bare host. The original parser repair brought the suite to 13. SRT, VTT and ASS
+The original smoke passed 12 tests; the latest suite contains 34 tests; optional integrations skip on a bare host. The original parser repair brought the suite to 13. SRT, VTT and ASS
 synthetic tone renders validate. WebVTT NOTE/STYLE/REGION metadata is skipped;
 a regression test prevents a NOTE timing example becoming speech.
 
@@ -124,7 +124,9 @@ Live pause/seek reconciliation waits until the offline chain passes listening.
    synthesize and compose. Synthetic 20-cue extraction currently has zero missing,
    duplicate, text or timing errors; both playback seeks pass. Accept only with
    real-source clock mapping and human playback evidence, without cutting speech.
-   Nonzero-origin media currently fails explicitly. Soundtrack separation needs
+   Explicit `--clock video` now maps a nonzero first-frame PTS to playback zero;
+   mismatched source/clock or pre-video captions fail. The synthetic 5-second-offset
+   trial passes all 20 cue comparisons and browser pause/seek/caption checks. Soundtrack separation needs
    its own later experiment; an authored background bed does not solve it.
 3. **One-card Fish XPU smoke (medium/high risk, 15-min bound when capacity exists).**
    Recheck actual device mapping and workload pressure. One permissioned line,

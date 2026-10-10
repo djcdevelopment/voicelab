@@ -44,7 +44,11 @@ Explicit capped `atempo` produces separate processed WAVs and leaves originals
 unchanged. Amplitude activity is not word alignment or a true dialogue boundary.
 
 `compose` verifies video origin and speech extent before muxing, refusing to
-truncate utterances. The optional background is an explicitly supplied WAV;
+truncate utterances. Explicit `--clock video` in extraction and composition
+subtracts first-frame PTS from both timelines; raw source captions and rounding
+error remain recorded. Extracted caption identity and clock metadata survive in
+render snapshots. Composition rejects different source media/clock modes, and
+extraction rejects captions preceding the first frame instead of clipping them. The optional background is an explicitly supplied WAV;
 original source audio is discarded. Native video controls and VTT use one media
 clock. Werkzeug conditional responses support browser seeking; the plain Python
 file server failed this experiment. `compare` makes same-corpus listening copies

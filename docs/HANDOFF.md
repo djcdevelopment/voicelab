@@ -52,12 +52,15 @@ For an operator-authorized local video with an accessible embedded text track:
 Then open http://127.0.0.1:18577/ . Default video is stream-copied; explicit
 `--transcode-video` enables bounded CPU H.264 conversion. Original audio is
 removed. Optional `--background` requires an already prepared WAV bed; source
-separation is not performed. A nonzero video origin or speech beyond the video
-fails explicitly instead of truncating audio. Bitmap captions have no OCR fallback.
+separation is not performed. Speech beyond the video fails explicitly instead of truncating audio. For nonzero
+video timestamps, add `--clock video` to both extraction and composition; captions
+are explicitly rebased to the first video frame and the raw SRT is retained.
+The default source clock still refuses nonzero origins. Extraction metadata is
+carried into renders, and mismatched source hashes or clock modes fail. Bitmap captions have no OCR fallback.
 
 ## Verified scope and limits
 
-32 tests pass with optional dependencies; unchanged bare smoke passes with optional
+34 tests pass with optional dependencies; unchanged bare smoke passes with optional
 integrations skipped. All eight render/media manifests in the latest receipt
 validate. Twenty extracted authored cues match text and milliseconds exactly.
 Headless Chromium checks play advancement, pause holding time, forward/backward
@@ -80,6 +83,23 @@ Exact next experiment: listen to the short matched comparison, identify a cue or
 gap responsible for the pacing/style concern, and change one voice/performance
 setting on that same four-cue corpus. Record listener phrasing/comfort and measured
 original duration, overflow and gaps. Do not declare episode readiness from RTF.
+
+## Explicit source clock evidence
+
+The `clock-map-20261010-01` receipt proves a synthetic video starting at 5 seconds,
+with original audio starting at zero. Explicit video-clock extraction restores all
+20 authored cue timestamps exactly; muxed video and audio both start at zero and
+last 72 seconds. Source identity/clock mismatch and pre-video captions are rejected.
+Browser play/pause/forward/backward seek and caption checks pass. This is synthetic
+container timing evidence, not a real anime dialogue-alignment result.
+
+Player: http://127.0.0.1:18578/playback-bound/index.html
+
+```bash
+.venv/bin/python -m subtitle_lab extract local_media/authorized.mkv --clock video --out output/mapped-captions-new
+.venv/bin/python -m subtitle_lab render output/mapped-captions-new/subtitles.srt --engine piper-local --model models/piper/en_US-lessac-medium.onnx --threads 2 --out output/mapped-speech-new
+.venv/bin/python -m subtitle_lab compose local_media/authorized.mkv output/mapped-speech-new --clock video --out output/mapped-playback-new
+```
 
 ## Earlier bounded CPU benchmark handoff
 
