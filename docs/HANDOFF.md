@@ -253,3 +253,11 @@ the lever from the marked defect: speeding speech up can enlarge the gaps and
 should not be presumed to improve pacing. Preserve unmodified baselines and do
 not trim audio. The played engine was not specified, so the present feedback
 cannot choose a model winner. No whole episode or live acquisition yet.
+
+## Latest operator listening feedback
+
+Operator: “those are getting better.” This is positive perceived improvement, with
+sample/engine/variant attribution still unspecified. It does not establish a model
+winner or whole-episode comfort. Baselines remain unchanged. Clarify the preferred
+comparison/variant before choosing a single phrasing/pause lever for the next pass.
+New feedback receipt: `output/RECEIPTS/listening-feedback-20261010-01/`.

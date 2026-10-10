@@ -142,3 +142,11 @@ Live pause/seek reconciliation waits until the offline chain passes listening.
 
 GO for short listening probes and authorized offline source trials. NO-GO for
 whole-episode quality claims, live streaming or Fish loading on occupied cards.
+
+## Latest operator listening feedback
+
+Operator: “those are getting better.” This is positive perceived improvement, with
+sample/engine/variant attribution still unspecified. It does not establish a model
+winner or whole-episode comfort. Baselines remain unchanged. Clarify the preferred
+comparison/variant before choosing a single phrasing/pause lever for the next pass.
+New feedback receipt: `output/RECEIPTS/listening-feedback-20261010-01/`.
