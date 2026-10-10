@@ -261,3 +261,22 @@ sample/engine/variant attribution still unspecified. It does not establish a mod
 winner or whole-episode comfort. Baselines remain unchanged. Clarify the preferred
 comparison/variant before choosing a single phrasing/pause lever for the next pass.
 New feedback receipt: `output/RECEIPTS/listening-feedback-20261010-01/`.
+
+## Attributed listening verdict and female voice probe
+
+Operator prefers the bottom option of each comparison: capped 1.15 Kokoro timing
+adjustment, and Kokoro Heart on the Piper/Kokoro conversation. Female first-syllable
+emphasis remains a perceived defect. These are relative sample judgments, not a
+whole-episode or general engine-quality verdict.
+
+A matched Heart→Bella stock-voice probe keeps words/windows, speed, seed and timing
+policy fixed. All ten male source stems match exactly. Bella's conversation has a
+625 ms next-cue overlap at cue 3, so Heart remains preferred pending a style verdict.
+No code changed or redundant tests rerun; new immutable receipt:
+`output/RECEIPTS/female-voice-probe-20261010-01/`.
+
+- Synthetic: http://127.0.0.1:18580/synthetic-review/index.html
+- Conversation: http://127.0.0.1:18580/conversation-review/index.html
+
+The preferred Heart is first on the synthetic page and second on the conversation
+page. Bella is a probe, with no claimed improvement until actual listening.
