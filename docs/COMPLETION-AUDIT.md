@@ -3,7 +3,8 @@
 The active objective remains **build out the rest of the subtitle to speech lab**.
 The original G0–G4 delivery has technical evidence and an explicit frontier plan.
 The broader goal is not achieved: speech performance, real-media dialogue fit and
-listener comfort are still unverified. Tests cannot substitute for those verdicts.
+episode-length listener comfort are still unverified. Unblinded excerpt preferences
+now favor Bella for fitted short dialogue and Heart for normal-speed conversation. Tests cannot substitute for those verdicts.
 
 ## Original delivery requirements
 
@@ -17,7 +18,7 @@ listener comfort are still unverified. Tests cannot substitute for those verdict
 | 6. Real local English WAV | Isolated maintained Piper HTTP and native Piper/Kokoro; supplied fixture and authored 20 cues | Ran on host. Operator confirmed successful playback and preliminary intelligibility |
 | 7. Engine/model/resource/timing/pronunciation record | Cold startup/demo, 3 warmups + 10 measured sets, latency/RTF, CPU/RSS/affinity, stem/mix/overrun evidence | Quantitative record present. Detailed pronunciation and episode comfort remain unscored; operator raised pacing/style concerns |
 | 8. Current Fish/lighter-candidate research and host enumeration | Saved upstream model/install/license sources; actual Torch XPU enumeration; Kokoro CPU trial | Documented vs ran-on-host separated. Fish inference is unproven; cards remain occupied |
-| 9. Same-20-cue bounded A/B protocol | Corpus identical across both CPU arms; 3 complete warmups + 10 complete measurements each, actual latency/resources | Technical comparison verified. Sequential runs, casting differs; no blinded quality or speaker-consistency verdict. Fish smoke deferred for capacity |
+| 9. Same-20-cue bounded A/B protocol | Corpus identical across both CPU arms; 3 complete warmups + 10 complete measurements each, actual latency/resources | Technical comparison verified. Sequential runs, casting differs; unblinded excerpt preferences recorded; no blinded quality or speaker-consistency verdict. Fish smoke deferred for capacity |
 | 10. Authorized source first; OCR optional; no protections bypass | Synthetic embedded-track extraction plus public CC BY Sintel captions; maintained parser crosscheck and caption bounds audit | Caption acquisition ran. Matching full-film video unavailable; trailer/caption mismatch rejected. OCR/live platform capture deferred |
 | Required plan, receipts, handoff, small local commits | FRONTIER-PLAN.md, HANDOFF.md, five sealed experiment receipts and small commits | Present and verified locally; no pushes |
 
@@ -25,7 +26,8 @@ listener comfort are still unverified. Tests cannot substitute for those verdict
 
 - **G5:** manual stock-voice casting and an explicit capped tempo experiment run.
   Original audio survives and residual overflow remains visible. Character identity,
-  speaker consistency, phrasing and naturalness do not have listener verdicts.
+  speaker consistency and episode comfort remain unscored. Page-relative phrasing/style
+  preferences are recorded, with the first-syllable concern not explicitly resolved.
 - **G6:** all 20 authored embedded captions extract exactly; 26 licensed real-caption
   cues agree with pysubs2 and synthesize. This does not prove real-film completeness
   or dialogue alignment. Available video and captions belong to different cuts.

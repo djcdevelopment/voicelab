@@ -169,3 +169,17 @@ No code changed or redundant tests rerun; new immutable receipt:
 
 The preferred Heart is first on the synthetic page and second on the conversation
 page. Bella is a probe, with no claimed improvement until actual listening.
+
+## Latest page-relative preferences
+
+Operator again preferred the bottom audio on both new pages. Player order proves:
+
+- **Four-cue dialogue:** Bella with capped 1.15 timing, male Michael unchanged.
+- **Twelve-cue conversation:** Heart at normal speed.
+
+Selected original renders/audio hashes are recorded in the new immutable receipt
+`output/RECEIPTS/listening-preference-20261010-01/`. Keep these as separate preferred
+controls. The samples differ in corpus and timing policy, so this does not establish
+an overall voice ranking. The first-syllable criticism was not explicitly revisited;
+pronunciation details, speaker consistency and episode-length comfort remain open.
+Both original full WAVs and earlier comparison pages remain intact.
