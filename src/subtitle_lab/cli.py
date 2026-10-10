@@ -10,6 +10,7 @@ from .doctor import doctor
 from .pipeline import render, validate
 from .subtitles import load_cues, summary
 from .tts import PiperHttpEngine, ToneEngine, WavDirectoryEngine
+from .voices import VoicePlan, VoiceSettings
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,11 +23,18 @@ def main(argv: list[str] | None = None) -> int:
     inspect.add_argument("--out", type=Path, help="Optional JSON report path")
     renderer = commands.add_parser("render", help="Generate stems, mixed WAV, and receipts")
     renderer.add_argument("source", type=Path)
-    renderer.add_argument("--engine", choices=("tone", "piper-http", "wav-dir"), default="tone")
+    renderer.add_argument("--engine", choices=("tone", "piper-http", "piper-local", "kokoro", "wav-dir"), default="tone")
     renderer.add_argument("--out", type=Path, required=True, help="New output directory; never overwritten")
     renderer.add_argument("--piper-url", default="http://127.0.0.1:5000/synthesize")
     renderer.add_argument("--speaker-id", type=int)
     renderer.add_argument("--wav-dir", type=Path, help="Directory containing 0001.wav, 0002.wav, etc.")
+    renderer.add_argument("--model", type=Path, help="Existing Piper .onnx model")
+    renderer.add_argument("--model-dir", type=Path, default=Path('models/kokoro'))
+    renderer.add_argument("--voice", help="Local Kokoro stock voice name")
+    renderer.add_argument("--speed", type=float, default=1.0, help="Explicit synthesis rate; 1 is normal")
+    renderer.add_argument("--threads", type=int, default=2, help="Bound local speech to this many CPU workers")
+    renderer.add_argument("--cast", type=Path, help="Manual voice/speaker/cue assignment JSON")
+    renderer.add_argument("--fit-max-speedup", type=float, help="Opt-in FFmpeg tempo fitting, capped from 1 to 1.5")
     checker = commands.add_parser("validate", help="Verify SHA256 of rendered WAV and stems")
     checker.add_argument("run", type=Path)
     args = parser.parse_args(argv)
@@ -36,15 +44,29 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "inspect":
             result = {"source": str(args.source.resolve()), "summary": summary(load_cues(args.source))}
         elif args.command == "render":
+            if args.out.exists():
+                raise FileExistsError(f'Refusing to overwrite existing run: {args.out}')
+            if args.engine not in ('piper-local','kokoro') and (args.cast or args.voice or args.speed != 1):
+                raise ValueError('Casting and synthesis rate currently require a local speech engine')
             if args.engine == "tone":
                 engine = ToneEngine()
             elif args.engine == "piper-http":
                 engine = PiperHttpEngine(args.piper_url, args.speaker_id)
+            elif args.engine in ('piper-local','kokoro'):
+                from .local_tts import PiperLocalEngine, KokoroEngine
+                plan = VoicePlan(VoiceSettings(voice=args.voice, speed=args.speed, speaker_id=args.speaker_id),args.cast)
+                plan.validate_cues(load_cues(args.source))
+                if args.engine == 'piper-local':
+                    if not args.model:
+                        parser.error('--model is required for piper-local')
+                    engine = PiperLocalEngine(args.model,plan,args.threads)
+                else:
+                    engine = KokoroEngine(args.model_dir,plan,args.threads)
             else:
                 if args.wav_dir is None:
                     parser.error("--wav-dir required with --engine wav-dir")
                 engine = WavDirectoryEngine(args.wav_dir)
-            result = render(args.source, args.out, engine, args.engine)
+            result = render(args.source, args.out, engine, args.engine,fit_max_speedup=args.fit_max_speedup)
             print(f"Render artifacts: {args.out.resolve()}", file=sys.stderr)
             result = {"status": "RENDERED", "output": str(args.out.resolve()),
                       "metrics": result["metrics"], "warnings": result["warnings"]}

@@ -19,6 +19,15 @@ SAMPLE_RATE = 24000
 
 
 class Engine(ABC):
+    def prepare(self, cues: list[Cue]) -> None:
+        """Validate assignments before any output is written."""
+
+    def describe(self) -> dict:
+        return {"backend": type(self).__name__}
+
+    def cue_details(self) -> dict:
+        return getattr(self, "last_result", {})
+
     @abstractmethod
     def synthesize(self, cue: Cue, destination: Path) -> None:
         """Write a WAV file for this cue; fail on error."""

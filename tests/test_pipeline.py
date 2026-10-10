@@ -19,7 +19,7 @@ class RenderTests(unittest.TestCase):
             manifest = render(SAMPLES / "demo.srt", run, ToneEngine(), "tone")
             self.assertEqual(manifest["metrics"]["cue_count"], 5)
             self.assertTrue((run / "dub.wav").is_file())
-            self.assertEqual(validate(run)["validated_files"], 6)
+            self.assertEqual(validate(run)["validated_files"], 10)
             self.assertGreater(duration_ms(run / "dub.wav"), 16000)
             self.assertEqual(wav_frames(run / "dub.wav")[0:3], (24000, 1, 2))
             with self.assertRaises(FileExistsError):
@@ -38,10 +38,10 @@ class RenderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             a = render(SAMPLES / "demo.srt", base / "tone", ToneEngine(), "tone")
-            self.assertEqual(a["schema_version"], "subtitle-lab-render-v1")
+            self.assertEqual(a["schema_version"], "subtitle-lab-render-v2")
             engine = WavDirectoryEngine(base / "tone" / "stems")
             render(SAMPLES / "demo.srt", base / "recomposed", engine, "wav-dir")
-            self.assertEqual(validate(base / "recomposed")["validated_files"], 6)
+            self.assertEqual(validate(base / "recomposed")["validated_files"], 10)
 
     def test_overrun_is_measured(self):
         with tempfile.TemporaryDirectory() as tmp:

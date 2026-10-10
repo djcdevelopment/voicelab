@@ -1,0 +1,48 @@
+{
+  "default": {
+    "voice": "af_heart",
+    "character": "Mai"
+  },
+  "cues": {
+    "2": {
+      "voice": "am_michael",
+      "character": "Ren"
+    },
+    "4": {
+      "voice": "am_michael",
+      "character": "Ren"
+    },
+    "6": {
+      "voice": "am_michael",
+      "character": "Ren"
+    },
+    "8": {
+      "voice": "am_michael",
+      "character": "Ren"
+    },
+    "10": {
+      "voice": "am_michael",
+      "character": "Ren"
+    },
+    "12": {
+      "voice": "am_michael",
+      "character": "Ren"
+    },
+    "14": {
+      "voice": "am_michael",
+      "character": "Ren"
+    },
+    "16": {
+      "voice": "am_michael",
+      "character": "Ren"
+    },
+    "18": {
+      "voice": "am_michael",
+      "character": "Ren"
+    },
+    "20": {
+      "voice": "am_michael",
+      "character": "Ren"
+    }
+  }
+}

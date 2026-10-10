@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import wave
+import math
 
 from .tts import SAMPLE_RATE
 
@@ -19,6 +20,8 @@ def wav_frames(path: Path) -> tuple[int, int, int, bytes]:
         sample_width = reader.getsampwidth()
         # getnframes is a metadata field; always read actual frames.
         frames = reader.readframes(reader.getnframes())
+        if len(frames) != reader.getnframes() * channels * sample_width:
+            raise ValueError(f"Truncated WAV data: {path.name}")
     return rate, channels, sample_width, frames
 
 
@@ -50,6 +53,36 @@ def load_pcm16_mono(path: Path, sample_rate: int = SAMPLE_RATE) -> array:
     return pcm
 
 
+def write_pcm16(path: Path, pcm: array, sample_rate: int = SAMPLE_RATE) -> None:
+    raw = array('h', pcm)
+    if sys.byteorder != 'little':
+        raw.byteswap()
+    with wave.open(str(path), 'wb') as wav:
+        wav.setnchannels(1); wav.setsampwidth(2); wav.setframerate(sample_rate)
+        wav.writeframes(raw.tobytes())
+
+
+def tempo_pcm(pcm: array, destination: Path, factor: float) -> array:
+    """Explicit pitch-preserving FFmpeg tempo change; preserve the complete utterance."""
+    if not math.isfinite(factor) or not 1 <= factor <= 1.5:
+        raise ValueError('Fit tempo factor must be between 1 and 1.5')
+    ffmpeg = shutil.which('ffmpeg')
+    if not ffmpeg:
+        raise RuntimeError('FFmpeg is required for explicit tempo fitting')
+    temporary = destination.with_suffix('.input.wav')
+    write_pcm16(temporary, pcm)
+    try:
+        result = subprocess.run([ffmpeg,'-hide_banner','-loglevel','error','-nostdin','-n',
+            '-i',str(temporary),'-af',f'atempo={factor:.9f}',
+            '-ar',str(SAMPLE_RATE),'-ac','1','-c:a','pcm_s16le',str(destination)],
+            capture_output=True,text=True,timeout=90)
+        if result.returncode:
+            raise RuntimeError(f'FFmpeg tempo failed: {result.stderr[-1000:]}')
+        return load_pcm16_mono(destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def duration_ms(path: Path) -> int:
     rate, channels, width, raw = wav_frames(path)
     return round(1000 * (len(raw) // (channels * width)) / rate)
@@ -63,7 +96,11 @@ def mix_to_wav(placed: list[tuple[int, array]], out_path: Path, end_ms: int,
     count = max(1, (end_ms * sample_rate + 999) // 1000)
     accumulation = array("f", [0.0]) * count
     for start_ms, pcm in placed:
+        if start_ms < 0:
+            raise ValueError('Negative cue start cannot be mixed')
         offset = round(start_ms * sample_rate / 1000)
+        if offset + len(pcm) > count:
+            raise ValueError('Mix end would truncate an utterance')
         for i, sample in enumerate(pcm):
             pos = offset + i
             if pos < count:
