@@ -14,6 +14,7 @@ Local subtitle file (SRT / VTT / ASS)
    ┌──────────┼─────────────┐
    ▼          ▼             ▼
  tone       piper-http     wav-dir
+          piper-local     kokoro (CPU)
  (beep)    (real TTS)     (external model)
    └──────────┼─────────────┘
               ▼
@@ -28,6 +29,27 @@ Local subtitle file (SRT / VTT / ASS)
 ```
 
 All engines obey `Engine.synthesize(cue, destination_path)`. Current backend selection is CLI-based and manual. Stems are standalone files; any model can be evaluated by writing its utterances to 0001.wav, 0002.wav, etc.
+
+## Implemented local source and playback boundaries
+
+Optional `media.py` borrows FFmpeg for text-track extraction and muxing, and
+PyAV for stream/timestamp inventory. Local text captions feed the same parser;
+there is no platform downloader. A manual JSON voice plan maps source speakers
+or cue numbers to stock voices; unknown/unused assignments fail explicitly.
+
+The render manifest v2 includes a source snapshot, normalized cue hashes,
+backend/model provenance, original and fitted durations, cue gaps/overlaps,
+amplitude activity and per-stage latency. Existing v1 receipts still validate.
+Explicit capped `atempo` produces separate processed WAVs and leaves originals
+unchanged. Amplitude activity is not word alignment or a true dialogue boundary.
+
+`compose` verifies video origin and speech extent before muxing, refusing to
+truncate utterances. The optional background is an explicitly supplied WAV;
+original source audio is discarded. Native video controls and VTT use one media
+clock. Werkzeug conditional responses support browser seeking; the plain Python
+file server failed this experiment. `compare` makes same-corpus listening copies
+and optional excerpts that retain every selected utterance and the full WAV.
+These are local diagnostic pages, with no app or scheduling framework.
 
 ## Future source adapters (NOT implemented)
 
@@ -69,4 +91,4 @@ For each cue, record source start/end, generated speech duration, generation lat
 
 ## Track/mix limitations
 
-Current output is 24000 Hz mono PCM16 with simple additive overlap. Original Japanese dialogue, background soundtrack, and sound effects remain untouched because source media is not ingested. For a later soundtrack-aware dub, evaluate source separation on permitted local media and collect objective/listener evidence. Do not assume center-channel reduction eliminates dialogue.
+Current output is 24000 Hz mono PCM16 with simple additive overlap. Original source audio is discarded during optional offline muxing. A separately prepared permissioned background WAV can be mixed with measured clipping; original music/effects are not recovered automatically. For a later soundtrack-aware dub, evaluate source separation on permitted local media and collect objective/listener evidence. Do not assume center-channel reduction eliminates dialogue.

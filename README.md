@@ -4,7 +4,13 @@
 
 **Mission:** Find the shortest credible path from timed English subtitles to a locally generated, scene-synchronized English dialogue track. After proving an offline run, investigate acquiring **visible** subtitles from browser playback via accessible tracks or OCR, and subsequently experimental live dubbing. This is a personal R&D project, **not a commercial product**.
 
-**Status of this archive:** a small *working starter harness*, not a full anime dubber. The included default `tone` backend generates audible **beeps, not speech**. Piper HTTP support is implemented but requires your separately installed and running local Piper server. The `wav-dir` adapter composes already generated WAV utterances from any TTS backend. Neither Fish S2 nor browser subtitle capture is implemented yet.
+**Current state:** an offline experiment bench with real CPU Piper/Kokoro speech,
+manual casting, measured timing, opt-in capped tempo fitting, authorized local
+text-track extraction, and synchronized MP4 playback. Synthetic media passes
+pause/seek/caption checks. Operator found speech understandable but questioned
+pacing/style for a whole episode. Fish XPU, automatic character casting, original
+soundtrack separation and live capture remain open. See [HANDOFF](docs/HANDOFF.md)
+for runnable commands and complete playback links.
 
 ## Contents
 
@@ -87,7 +93,12 @@ For each run under `output/<run-name>/`:
 - `manifest.json`: input SHA256, stem SHA256, model/backend name, wall time, duration/slack/overrun/overlap/clipping metrics.
 - `report.md`: operator-facing summary and explicit known limits.
 
-**No force alignment, duration fitting, voice cloning, automatic character identification, screen capture, DRM bypass, audio-source separation, soundtrack mixing, or subtitle track downloads are provided in the starter.** Those are candidate next gates, not finished features.
+Opt-in `--fit-max-speedup 1.15` preserves original stems and reports remaining
+overflow; it does not guarantee dialogue fit or improve acting. `compose` accepts
+an explicitly prepared background WAV, discards original source audio, and muxes
+one shared media clock. It does not separate Japanese dialogue from music.
+Force alignment, voice cloning, automatic character identification, screen
+capture and live platform integration remain future gates.
 
 ## Design posture
 

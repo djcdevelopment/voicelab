@@ -1,13 +1,15 @@
 # Subtitle Lab frontier plan — 2026-10-10
 
-G0–G2 have running evidence. G3 has real local speech and timing/resource evidence,
-but intelligibility, pronunciation and acting quality await operator listening.
-G4 now has a Kokoro CPU feasibility result; Fish XPU remains a plan, not a host compatibility result.
-Local machine details remain in ignored receipts `initial-20261010-01` and `cpu-ab-20261010-01`.
+G0–G3 have running CPU evidence; intelligibility is provisionally positive,
+with operator pacing/style concerns. Manual casting, capped tempo fitting,
+local text-track extraction and offline synchronized playback now have synthetic
+technical evidence. Listener quality and real-source performance remain open.
+Fish XPU remains a plan, with occupied cards and no host inference claim.
+Machine details remain in ignored receipts, including `bench-build-20261010-01`.
 
 The extracted checkout is the session workspace; the requested `/work/subtitle`
 was empty. Work stayed in the existing checkout. No existing service was changed.
-The original smoke passed 12 tests; the repaired smoke passes 13. SRT, VTT and ASS
+The original smoke passed 12 tests; the latest suite contains 32 tests; optional integrations skip on a bare host. The original parser repair brought the suite to 13. SRT, VTT and ASS
 synthetic tone renders validate. WebVTT NOTE/STYLE/REGION metadata is skipped;
 a regression test prevents a NOTE timing example becoming speech.
 
@@ -28,7 +30,7 @@ Keep original stems, measure overflow, and never silently cut or shorten speech.
 | Candidate | Evidence and expressive potential | Speakers/timing | Resources and friction | License/fallback |
 |---|---|---|---|---|
 | OHF Piper | Ran on host; plain voice, listening pending | One chosen voice; upstream speaker IDs and length_scale; no hard duration guarantee | CPU baseline; isolated ONNX runtime. Fast wall time but default ONNX threading used substantial aggregate CPU | GPL-3.0 implementation; each voice has separate provenance. Lessac card links a research dataset agreement, not a universal voice grant. Keep local; review before distribution |
-| Kokoro-82M | Ran on host CPU with two stock voices; acting/listening unassessed | Alternate Heart/Michael cues, speed 1.0; no exact duration or inferred identity | Two-core mean generation RTF 0.2521; observed bench RSS 1928.6 MiB. Isolated Torch/Misaki/espeakng-loader; six >250 ms overruns per set | Apache-2.0 weights; integrated through wav-dir; Piper fallback |
+| Kokoro-82M | Ran on host CPU with two stock voices; acting/listening unassessed | Alternate Heart/Michael cues, speed 1.0; no exact duration or inferred identity | Two-core mean generation RTF 0.2521; observed bench RSS 1928.6 MiB. Isolated Torch/Misaki/espeakng-loader; six >250 ms overruns per set | Apache-2.0 weights; native CPU engine and wav-dir available; Piper fallback |
 | Fish S2 Pro | Upstream inline prosody/emotion and multi-speaker support; strongest expressive research lead | Reference-controlled speakers and instruction tags; strict cue-duration control unproven | Upstream 24 GB inference VRAM and XPU nightly installation route. Host cards occupied; no inference attempted. Compiler/runtime compatibility remains unproven | Fish Audio Research License permits research/noncommercial use subject to terms; separate commercial license. No cloud fallback |
 
 Sources checked this session: [Piper HTTP](https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/API_HTTP.md),
@@ -110,22 +112,26 @@ Live pause/seek reconciliation waits until the offline chain passes listening.
 
 ## Three next work items
 
-1. **Listen and score (low complexity; about 15 min).** Use the complete
-   player URL, listen to all 20 cues, and copy the scoring sheet to a fresh receipt.
-   Accept only with intelligibility/pronunciation, acting and speaker-consistency
-   judgments. CPU bounding is completed; no longer a prerequisite to rerun.
-2. **Phrasing/pause probe (low/medium complexity; about 20 min).** Mark four
-   awkward utterances or gaps, then compare identical text and placements with
-   one stock voice or rate change at a time. Accept only with intelligibility,
-   natural phrasing and listening-comfort evidence plus measured duration/overrun.
-   Speeding up may enlarge gaps; choose the lever from the marked defect, not
-   generation speed. Preserve baseline WAVs; no truncation or silent text edits.
-3. **One-card Fish XPU feasibility (medium/high risk; 15-min smoke once capacity exists).**
-   First recheck workload pressure and device mapping; do not free resources by
-   changing existing services. One line, compile disabled initially, no casting
-   pipeline. Accept only an actual correctly decoded speech WAV with device,
-   latency and memory evidence. Then schedule the 20-cue A/B. Current verdict:
-   NO-GO for loading Fish alongside the occupied cards.
+1. **Pacing/style listening probe (low complexity, 15–20 min).** Use the first-four-cue
+   player at http://127.0.0.1:18576/short-review/index.html . Original Kokoro,
+   speed 0.95 and capped tempo 1.15 use identical words and placements. The slower
+   full set has seven >250 ms overruns, original six, fitted five; that is timing
+   evidence, not a quality winner. Accept only after a listener identifies the
+   awkward cue/gap and scores phrasing/comfort. Choose one voice or performance
+   lever from that defect; preserve words and original audio.
+2. **Permissioned source clock trial (medium complexity, 20–30 min once media exists).**
+   Extract one authorized local text track, audit timestamps/line completeness,
+   synthesize and compose. Synthetic 20-cue extraction currently has zero missing,
+   duplicate, text or timing errors; both playback seeks pass. Accept only with
+   real-source clock mapping and human playback evidence, without cutting speech.
+   Nonzero-origin media currently fails explicitly. Soundtrack separation needs
+   its own later experiment; an authored background bed does not solve it.
+3. **One-card Fish XPU smoke (medium/high risk, 15-min bound when capacity exists).**
+   Recheck actual device mapping and workload pressure. One permissioned line,
+   isolated env, compile disabled initially, no unrelated workload changes.
+   Accept only decoded English speech with actual device/memory/latency records.
+   Then run the fixed 20-cue, 3-warmup/10-measurement comparison. Current NO-GO:
+   occupied cards; upstream XPU support does not establish B70 compatibility.
 
-GO for listening judgments and then one measured timing lever. NO-GO for
-live streaming, character-aware dubbing claims or soundtrack separation yet.
+GO for short listening probes and authorized offline source trials. NO-GO for
+whole-episode quality claims, live streaming or Fish loading on occupied cards.

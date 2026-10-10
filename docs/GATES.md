@@ -1,17 +1,21 @@
 # Experiment gates and stop/go criteria
 
-Gate status in this **starter archive** is *implementation status only*. No benchmarks have been run on the user's Arc workstation.
+Gate status below distinguishes running synthetic evidence from listening and
+real-source evidence. Detailed receipts remain local and ignored by git.
 
-| Gate | Purpose | Objective acceptance evidence | Starter status |
-|---|---|---|---|
-| G0 | Survey repo and hardware without disruption | Read-only doctor receipt, XPU enumeration (discrete vs integrated), tools/versions, workloads and available VRAM | Command implemented; not run on user machine |
-| G1 | Reproducible subtitle clock | SRT/VTT/ASS fixtures, malformed/overlap cases, deterministic cue JSON and parser tests | Implemented, synthetic fixtures |
-| G2 | Local timed audio | Test tone → stems/mixed WAV, checksum validation, timing-overrun report | Implemented |
-| G3 | Intelligible local English voice | Piper or preexisting TTS produces English WAV, at least 20 representative lines, RTF and duration error recorded | Adapter present; requires user-host TTS |
-| G4 | Arc expressive TTS feasibility | Evaluate 1+ credible voices on actual B70; XPU-only results, repeatable environment, performance and fidelity sample set | Not attempted |
-| G5 | Character-aware dub slice | 2+ distinct consistent voices and real duration-fitting experiment with listener assessment | Not attempted |
-| G6 | Subtitle acquisition adapter | One authorized source proven end-to-end; measure missing/duplicate/error rates | Not attempted |
-| G7 | Scene-synchronized playback | Live or offline sync with pause/seek correctness; soundtrack options measured | Not attempted |
+| Gate | Observed evidence | Remaining acceptance gap |
+|---|---|---|
+| G0 | Read-only inventory, actual XPU enumeration, occupied cards recorded | Recheck capacity before any GPU allocation |
+| G1 | SRT/VTT/ASS smoke, metadata regression and clock tests | Richer subtitle formats only when encountered |
+| G2 | Tone/WAV composition, checksums, no-truncation tests | Tone is not speech evidence |
+| G3 | Piper and Kokoro CPU; 3 warmups + 10 measured sets; preliminary intelligibility feedback | Pronunciation, acting and episode comfort remain unscored |
+| G4 | Upstream Fish XPU research; actual host enumeration | Fish inference blocked by occupied cards; compatibility unproven |
+| G5 | Two manually assigned Kokoro voices; capped tempo fit retains originals | Listener consistency/naturalness verdict; character inference absent |
+| G6 | Authored video text track: all 20 cues exact, then real speech synthesis | Permissioned real-source validation; browser/OCR not implemented |
+| G7 | Synthetic offline MP4: shared clock, play/pause, seeks both ways and active captions pass Chromium automation | Human Firefox video/audio review; real soundtrack separation and live sync absent |
+
+The latest suite has 32 tests (optional media/HTTP integrations skip on a bare
+stdlib host). Unchanged smoke remains runnable without installing speech models.
 
 ## First cold-builder work session
 

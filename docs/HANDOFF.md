@@ -1,3 +1,88 @@
+# Subtitle Lab handoff — offline pipeline slice
+
+Real local CPU speech, explicit manual casting and an offline caption-to-video
+chain work on authored fixtures. Preliminary operator feedback: understandable,
+but pacing/style may be unsuitable for an episode. No engine winner is inferred.
+
+Complete links on this workstation:
+
+- Short pacing comparison: http://127.0.0.1:18576/short-review/index.html
+- Full three-arm comparison: http://127.0.0.1:18576/review/index.html
+- Extracted text track → Piper → synchronized video: http://127.0.0.1:18576/playback-from-track/index.html
+- Kokoro synchronized video: http://127.0.0.1:18576/playback/index.html
+
+These use an authored moving test pattern and tone background, not anime footage.
+The range-capable loopback server is running for review. Restart only this lab's
+server when needed; choose another free port if occupied:
+
+```bash
+export PYTHONPATH="$PWD/src"
+export PATH="$PWD/.venv/bin:$PATH"
+.venv/bin/python -m subtitle_lab serve output/RECEIPTS/bench-build-20261010-01 --port 18576
+```
+
+## Reproduce in new output directories
+
+Run from the repo root. Existing models/envs are isolated here; package versions
+and hashes are in local receipts. The plain smoke does not need model packages.
+
+```bash
+./scripts/smoke.sh
+export PYTHONPATH="$PWD/src"
+export PATH="$PWD/.venv/bin:$PATH"
+.venv/bin/python -m subtitle_lab render samples/dialogue20.srt --engine piper-local --model models/piper/en_US-lessac-medium.onnx --threads 2 --out output/piper-new
+.venv-kokoro/bin/python -m subtitle_lab render samples/dialogue20.srt --engine kokoro --model-dir models/kokoro --cast samples/cast-dialogue20.json --threads 2 --out output/kokoro-new
+.venv-kokoro/bin/python -m subtitle_lab render samples/dialogue20.srt --engine kokoro --model-dir models/kokoro --cast samples/cast-dialogue20.json --speed 0.95 --threads 2 --out output/kokoro-slower-new
+.venv/bin/python -m subtitle_lab render samples/dialogue20.srt --engine wav-dir --wav-dir output/kokoro-new/stems --fit-max-speedup 1.15 --out output/kokoro-fit-new
+.venv/bin/python -m subtitle_lab compare output/kokoro-new output/kokoro-slower-new output/kokoro-fit-new --first-cues 4 --out output/listening-new
+```
+
+For an operator-authorized local video with an accessible embedded text track:
+
+```bash
+.venv/bin/python -m subtitle_lab probe-media local_media/authorized.mkv
+.venv/bin/python -m subtitle_lab extract local_media/authorized.mkv --subtitle-index 0 --out output/captions-new
+.venv/bin/python -m subtitle_lab render output/captions-new/subtitles.srt --engine piper-local --model models/piper/en_US-lessac-medium.onnx --threads 2 --out output/speech-new
+.venv/bin/python -m subtitle_lab compose local_media/authorized.mkv output/speech-new --out output/playback-new
+.venv/bin/python -m subtitle_lab validate output/speech-new
+.venv/bin/python -m subtitle_lab validate-media output/playback-new
+.venv/bin/python -m subtitle_lab serve output/playback-new --port 18577
+```
+
+Then open http://127.0.0.1:18577/ . Default video is stream-copied; explicit
+`--transcode-video` enables bounded CPU H.264 conversion. Original audio is
+removed. Optional `--background` requires an already prepared WAV bed; source
+separation is not performed. A nonzero video origin or speech beyond the video
+fails explicitly instead of truncating audio. Bitmap captions have no OCR fallback.
+
+## Verified scope and limits
+
+32 tests pass with optional dependencies; unchanged bare smoke passes with optional
+integrations skipped. All eight render/media manifests in the latest receipt
+validate. Twenty extracted authored cues match text and milliseconds exactly.
+Headless Chromium checks play advancement, pause holding time, forward/backward
+seek, active captions and resumed frame/media clock. This muted automated check
+is not a listening judgment or Firefox verification.
+
+Original Kokoro: 46.70 seconds of speech, six >250 ms overruns. Speed 0.95:
+48.70 seconds, seven overruns. Capped 1.15 tempo fit: 44.655 seconds, five overruns,
+ten altered cues, original stems retained. No next-cue overlaps above 250 ms or
+mixed clipping in these runs. These are single-run timing probes, not a repeated
+benchmark. The prior 3+10 CPU benchmarks remain unchanged below.
+
+The basic static server failed seeking, resetting time to zero. Maintained
+Werkzeug HTTP Range handling fixed the observed issue; failed browser checks
+remain in the receipt. Source separation, automatic casting, true dialogue
+alignment, expressive Fish inference, OCR/browser acquisition and live sync
+remain open. No unrelated service or GPU allocation was changed.
+
+Exact next experiment: listen to the short matched comparison, identify a cue or
+gap responsible for the pacing/style concern, and change one voice/performance
+setting on that same four-cue corpus. Record listener phrasing/comfort and measured
+original duration, overflow and gaps. Do not declare episode readiness from RTF.
+
+## Earlier bounded CPU benchmark handoff
+
 # Subtitle Lab handoff — 2026-10-10, CPU voice slice
 
 The existing session checkout remains the repo. No second repo was created and
@@ -85,7 +170,7 @@ manifest generation time is **import time**, not Kokoro synthesis time; use
 
 ## What the evidence says
 
-All 13 tests pass before and after changes. Both engines completed 3 whole-set
+The earlier CPU slice passed 13 tests before and after changes. Both engines completed 3 whole-set
 warmups plus 10 measured 20-cue runs without synthesis failure or retries.
 All 42 manifests in the new receipt validate, including the failed resource-bound
 attempt's valid audio outputs. The failure was resource discipline, not synthesis.
@@ -103,8 +188,7 @@ that alone does not prove audible distortion. No audio was cut to fit.
 
 These were sequential feasibility runs with different measurement scopes and
 single/two-voice casting, not a blinded quality verdict. Preliminary operator intelligibility feedback is positive, with pacing/style concerns. Engine attribution and cue coverage are unspecified; pronunciation, expression and speaker continuity remain unscored. Fish, subtitle capture,
-character inference, duration fitting, source separation and synchronized
-playback remain unproven/unimplemented.
+character inference and source separation remain unproven/unimplemented. Later timing and offline playback evidence is described above.
 
 Full evidence: `output/RECEIPTS/cpu-ab-20261010-01/` (sealed locally); original
 receipt `output/RECEIPTS/initial-20261010-01/` remains unchanged.
