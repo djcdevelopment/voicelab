@@ -89,10 +89,12 @@ def duration_ms(path: Path) -> int:
 
 
 def mix_to_wav(placed: list[tuple[int, array]], out_path: Path, end_ms: int,
-               sample_rate: int = SAMPLE_RATE) -> dict:
+               sample_rate: int = SAMPLE_RATE, gain: float = .72) -> dict:
     """Sum overlapping voices on one timeline. Clip detection is recorded, not hidden."""
     if end_ms > 2 * 60 * 60 * 1000:
         raise ValueError("Prototype render limit: 2 hours; implement streaming mix for longer media")
+    if not math.isfinite(gain) or not 0 <= gain <= 1:
+        raise ValueError('Mix gain must be finite between zero and one')
     count = max(1, (end_ms * sample_rate + 999) // 1000)
     accumulation = array("f", [0.0]) * count
     for start_ms, pcm in placed:
@@ -104,7 +106,7 @@ def mix_to_wav(placed: list[tuple[int, array]], out_path: Path, end_ms: int,
         for i, sample in enumerate(pcm):
             pos = offset + i
             if pos < count:
-                accumulation[pos] += sample * 0.72  # conservative headroom per stem
+                accumulation[pos] += sample * gain
     clipped = sum(1 for n in accumulation if abs(n) > 32767)
     peak = max(abs(n) for n in accumulation)
     output = array("h", (int(max(-32768, min(32767, round(x)))) for x in accumulation))

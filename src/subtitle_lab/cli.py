@@ -37,10 +37,40 @@ def main(argv: list[str] | None = None) -> int:
     renderer.add_argument("--fit-max-speedup", type=float, help="Opt-in FFmpeg tempo fitting, capped from 1 to 1.5")
     checker = commands.add_parser("validate", help="Verify SHA256 of rendered WAV and stems")
     checker.add_argument("run", type=Path)
+    probe = commands.add_parser('probe-media',help='Read-only stream inventory of authorized local media')
+    probe.add_argument('source',type=Path)
+    extract = commands.add_parser('extract',help='Extract an authorized local text caption track with FFmpeg')
+    extract.add_argument('source',type=Path)
+    extract.add_argument('--subtitle-index',type=int,default=0)
+    extract.add_argument('--out',type=Path,required=True)
+    compose = commands.add_parser('compose',help='Mux generated speech with local video for one-clock playback')
+    compose.add_argument('source',type=Path)
+    compose.add_argument('run',type=Path)
+    compose.add_argument('--out',type=Path,required=True)
+    compose.add_argument('--background',type=Path,help='Explicitly supplied instrumental/permissioned WAV bed')
+    compose.add_argument('--background-gain',type=float,default=.15)
+    compose.add_argument('--transcode-video',action='store_true',help='Explicit CPU H.264 conversion instead of streamcopy')
+    media_checker = commands.add_parser('validate-media',help='Check extracted caption or playback artifact hashes')
+    media_checker.add_argument('run',type=Path)
+    reviewer = commands.add_parser('serve',help='Serve local review audio/video with HTTP Range support')
+    reviewer.add_argument('directory',type=Path)
+    reviewer.add_argument('--port',type=int,default=18576)
+    comparison = commands.add_parser('compare',help='Make a listening set from same-corpus render runs')
+    comparison.add_argument('runs',type=Path,nargs='+')
+    comparison.add_argument('--label',action='append')
+    comparison.add_argument('--first-cues',type=int,help='Short review excerpt retaining all selected utterances')
+    comparison.add_argument('--out',type=Path,required=True)
     args = parser.parse_args(argv)
     try:
         if args.command == "doctor":
             result = doctor()
+        elif args.command == 'serve':
+            from .review import serve
+            serve(args.directory,args.port)
+            return 0
+        elif args.command == 'compare':
+            from .review import build_comparison
+            result = build_comparison(args.runs,args.out,args.label,args.first_cues)
         elif args.command == "inspect":
             result = {"source": str(args.source.resolve()), "summary": summary(load_cues(args.source))}
         elif args.command == "render":
@@ -70,9 +100,16 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Render artifacts: {args.out.resolve()}", file=sys.stderr)
             result = {"status": "RENDERED", "output": str(args.out.resolve()),
                       "metrics": result["metrics"], "warnings": result["warnings"]}
-        else:
+        elif args.command == 'validate':
             result = validate(args.run)
-        if getattr(args, "out", None) is not None and args.command != "render":
+        else:
+            from .media import probe,extract_captions,compose_video,validate_media
+            if args.command == 'probe-media':result = probe(args.source)
+            elif args.command == 'extract':result = extract_captions(args.source,args.out,args.subtitle_index)
+            elif args.command == 'compose':result = compose_video(args.source,args.run,args.out,
+                background=args.background,background_gain=args.background_gain,transcode=args.transcode_video)
+            else:result = validate_media(args.run)
+        if getattr(args, "out", None) is not None and args.command in ('doctor','inspect'):
             args.out.parent.mkdir(parents=True, exist_ok=True)
             # diagnostics should not silently overwrite prior evidence
             with args.out.open("x", encoding="utf-8") as output:
