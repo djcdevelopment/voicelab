@@ -77,6 +77,27 @@ def _stamp(ms: int,decimal: str='.') -> str:
     return f'{ms//3600000:02}:{ms//60000%60:02}:{ms//1000%60:02}{decimal}{ms%1000:03}'
 
 
+def audit_captions(source: Path,captions: Path,*,clock: str='source') -> dict:
+    """Read-only bounds check, not a claim of word alignment or cue completeness."""
+    info=probe(source);mapping=_clock(info,clock)
+    first=info['video_first_pts_s'];end=info['video_end_pts_s']
+    if first is None or end is None:raise ValueError('Caption audit requires timestamped video')
+    cues=load_cues(captions)
+    # Source-clock captions use original PTS; video-clock captions are already rebased.
+    offset=first*1000 if clock=='source' else 0
+    length=(end-first)*1000
+    issues=[]
+    for cue in cues:
+        start=cue.start_ms-offset;stop=cue.end_ms-offset
+        if start<-.5 or stop>length+.5:
+            issues.append({'cue':cue.index,'playback_start_ms':start,'playback_end_ms':stop,
+                           'before_video_ms':max(0,-start),'beyond_video_ms':max(0,stop-length)})
+    return {'status':'FAIL' if issues else 'PASS','source':info,
+            'captions':{'path':str(captions.resolve()),'sha256':file_sha256(captions),'summary':summary(cues)},
+            'caption_clock':clock,'video_duration_ms':length,'out_of_bounds_cues':issues,
+            'limit':'Bounds only; missing/duplicate dialogue, words, soundtrack and lip sync are not verified'}
+
+
 def extract_captions(source: Path,destination: Path,subtitle_index: int=0,*,clock: str='source') -> dict:
     if type(subtitle_index) is not int or subtitle_index<0:raise ValueError('Subtitle index must be nonnegative')
     info=probe(source)

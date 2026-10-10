@@ -39,6 +39,11 @@ def main(argv: list[str] | None = None) -> int:
     checker.add_argument("run", type=Path)
     probe = commands.add_parser('probe-media',help='Read-only stream inventory of authorized local media')
     probe.add_argument('source',type=Path)
+    audit = commands.add_parser('audit-captions',help='Read-only caption/video window check before synthesis; not word alignment')
+    audit.add_argument('source',type=Path)
+    audit.add_argument('captions',type=Path)
+    audit.add_argument('--clock',choices=('source','video'),default='source',help='Clock already used by the supplied captions')
+    audit.add_argument('--out',type=Path)
     extract = commands.add_parser('extract',help='Extract an authorized local text caption track with FFmpeg')
     extract.add_argument('source',type=Path)
     extract.add_argument('--subtitle-index',type=int,default=0)
@@ -105,19 +110,20 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == 'validate':
             result = validate(args.run)
         else:
-            from .media import probe,extract_captions,compose_video,validate_media
+            from .media import probe,audit_captions,extract_captions,compose_video,validate_media
             if args.command == 'probe-media':result = probe(args.source)
+            elif args.command == 'audit-captions':result = audit_captions(args.source,args.captions,clock=args.clock)
             elif args.command == 'extract':result = extract_captions(args.source,args.out,args.subtitle_index,clock=args.clock)
             elif args.command == 'compose':result = compose_video(args.source,args.run,args.out,
                 background=args.background,background_gain=args.background_gain,transcode=args.transcode_video,clock=args.clock)
             else:result = validate_media(args.run)
-        if getattr(args, "out", None) is not None and args.command in ('doctor','inspect'):
+        if getattr(args, "out", None) is not None and args.command in ('doctor','inspect','audit-captions'):
             args.out.parent.mkdir(parents=True, exist_ok=True)
             # diagnostics should not silently overwrite prior evidence
             with args.out.open("x", encoding="utf-8") as output:
                 output.write(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 0
+        return 1 if args.command=='audit-captions' and result['status']=='FAIL' else 0
     except Exception as exc:
         print(f"ERROR [{type(exc).__name__}]: {exc}", file=sys.stderr)
         return 1

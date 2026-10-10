@@ -7,7 +7,7 @@ import tempfile
 import unittest
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
-from subtitle_lab.media import extract_captions,compose_video,probe,validate_media
+from subtitle_lab.media import extract_captions,compose_video,probe,validate_media,audit_captions
 from subtitle_lab.pipeline import render
 from subtitle_lab.subtitles import load_cues
 from subtitle_lab.tts import ToneEngine
@@ -52,6 +52,14 @@ class MediaTests(unittest.TestCase):
         with self.assertRaises(ValueError):extract_captions(self.source,self.base/'none',99)
         with self.assertRaises(ValueError):extract_captions(self.source,self.base/'negative',-1)
 
+    def test_caption_audit_rejects_longer_movie_captions_before_synthesis(self):
+        self.assertEqual(audit_captions(self.source,self.captions)['status'],'PASS')
+        self.captions.write_text('1\n00:01:47,250 --> 00:01:50,500\nWrong release captions.\n')
+        result=audit_captions(self.source,self.captions)
+        self.assertEqual(result['status'],'FAIL')
+        self.assertEqual(result['out_of_bounds_cues'][0]['beyond_video_ms'],108500)
+        self.assertFalse((self.base/'speech').exists())
+
     def test_media_tamper_is_detected(self):
         out=self.base/'extract';extract_captions(self.source,out)
         (out/'subtitles.srt').write_text('changed')
@@ -77,6 +85,9 @@ class MediaTests(unittest.TestCase):
         self.assertEqual(load_cues(out/'subtitles.srt'),load_cues(self.captions))
         self.assertEqual(load_cues(out/'source-subtitles.srt')[0].start_ms,2100)
         self.assertEqual(result['clock_mapping']['subtitle_offset_ms'],2000)
+        self.assertEqual(audit_captions(source,out/'source-subtitles.srt',clock='source')['status'],'PASS')
+        self.assertEqual(audit_captions(source,out/'subtitles.srt',clock='video')['status'],'PASS')
+        self.assertEqual(audit_captions(source,out/'subtitles.srt',clock='source')['status'],'FAIL')
         run=self.base/'speech';render(out/'subtitles.srt',run,ToneEngine(),'tone')
         with self.assertRaisesRegex(ValueError,'clock mappings disagree'):
             compose_video(source,run,self.base/'unmapped')
