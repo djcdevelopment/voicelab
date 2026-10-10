@@ -29,8 +29,8 @@ Keep original stems, measure overflow, and never silently cut or shorten speech.
 
 | Candidate | Evidence and expressive potential | Speakers/timing | Resources and friction | License/fallback |
 |---|---|---|---|---|
-| OHF Piper | Ran on host; plain voice, listening pending | One chosen voice; upstream speaker IDs and length_scale; no hard duration guarantee | CPU baseline; isolated ONNX runtime. Fast wall time but default ONNX threading used substantial aggregate CPU | GPL-3.0 implementation; each voice has separate provenance. Lessac card links a research dataset agreement, not a universal voice grant. Keep local; review before distribution |
-| Kokoro-82M | Ran on host CPU with two stock voices; acting/listening unassessed | Alternate Heart/Michael cues, speed 1.0; no exact duration or inferred identity | Two-core mean generation RTF 0.2521; observed bench RSS 1928.6 MiB. Isolated Torch/Misaki/espeakng-loader; six >250 ms overruns per set | Apache-2.0 weights; native CPU engine and wav-dir available; Piper fallback |
+| OHF Piper | Ran on host; plain voice; preliminary intelligibility feedback | One chosen voice; upstream speaker IDs and length_scale; no hard duration guarantee | CPU baseline; isolated ONNX runtime. Fast wall time but default ONNX threading used substantial aggregate CPU | GPL-3.0 implementation; each voice has separate provenance. Lessac card links a research dataset agreement, not a universal voice grant. Keep local; review before distribution |
+| Kokoro-82M | Ran on host CPU with two stock voices; excerpt preferences recorded; acting unscored | Alternate Heart/Michael cues, speed 1.0; no exact duration or inferred identity | Two-core mean generation RTF 0.2521; observed bench RSS 1928.6 MiB. Isolated Torch/Misaki/espeakng-loader; six >250 ms overruns per set | Apache-2.0 weights; native CPU engine and wav-dir available; Piper fallback |
 | Fish S2 Pro | Upstream inline prosody/emotion and multi-speaker support; strongest expressive research lead | Reference-controlled speakers and instruction tags; strict cue-duration control unproven | Upstream 24 GB inference VRAM and XPU nightly installation route. Host cards occupied; no inference attempted. Compiler/runtime compatibility remains unproven | Fish Audio Research License permits research/noncommercial use subject to terms; separate commercial license. No cloud fallback |
 
 Sources checked this session: [Piper HTTP](https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/API_HTTP.md),
@@ -112,13 +112,13 @@ Live pause/seek reconciliation waits until the offline chain passes listening.
 
 ## Three next work items
 
-1. **Pacing/style listening probe (low complexity, 15–20 min).** Use the first-four-cue
-   player at http://127.0.0.1:18576/short-review/index.html . Original Kokoro,
-   speed 0.95 and capped tempo 1.15 use identical words and placements. The slower
-   full set has seven >250 ms overruns, original six, fitted five; that is timing
-   evidence, not a quality winner. Accept only after a listener identifies the
-   awkward cue/gap and scores phrasing/comfort. Choose one voice or performance
-   lever from that defect; preserve words and original audio.
+1. **Targeted phrasing probe (low complexity, 15–20 min once a cue is identified).**
+   Preserve Bella fitted dialogue and Heart normal-speed conversation as separate
+   preferred controls. Ask for one problematic word/cue, particularly the female
+   first-syllable emphasis. Change one performance lever on identical words/windows;
+   accept only listener-confirmed improvement with overflow/overlap/clipping
+   recorded and original stems retained. Existing complete comparison links appear
+   below. Additional untargeted variants do not close this gate.
 2. **Matching permissioned video trial (medium complexity, 20–30 min once available).**
    A real-caption slice now downloaded CC BY Sintel captions: 26 cues agree with
    pysubs2 and synthesize on both CPU engines. Audio comparison:
@@ -143,43 +143,26 @@ Live pause/seek reconciliation waits until the offline chain passes listening.
 GO for short listening probes and authorized offline source trials. NO-GO for
 whole-episode quality claims, live streaming or Fish loading on occupied cards.
 
-## Latest operator listening feedback
+## Current listening decision
 
-Operator: “those are getting better.” This is positive perceived improvement, with
-sample/engine/variant attribution still unspecified. It does not establish a model
-winner or whole-episode comfort. Baselines remain unchanged. Clarify the preferred
-comparison/variant before choosing a single phrasing/pause lever for the next pass.
-New feedback receipt: `output/RECEIPTS/listening-feedback-20261010-01/`.
+The latest unblinded preferences select **Bella with capped 1.15 tempo fitting**
+for the four-cue synthetic dialogue, and **Heart at normal speed** for the
+12-cue conversation. Michael remains the synthetic male voice. These are
+separate preferred controls; differing corpora and timing policies do not support
+a universal voice winner. The earlier female first-syllable emphasis concern
+remains unresolved, and episode comfort has not been established.
 
-## Attributed listening verdict and female voice probe
+- [Synthetic comparison — preferred Bella is bottom](http://127.0.0.1:18580/synthetic-review/index.html)
+- [Conversation comparison — preferred Heart is bottom](http://127.0.0.1:18580/conversation-review/index.html)
 
-Operator prefers the bottom option of each comparison: capped 1.15 Kokoro timing
-adjustment, and Kokoro Heart on the Piper/Kokoro conversation. Female first-syllable
-emphasis remains a perceived defect. These are relative sample judgments, not a
-whole-episode or general engine-quality verdict.
+Exact selections and audio hashes live in the immutable local receipt
+`output/RECEIPTS/listening-preference-20261010-01/`; the voice probe is in
+`output/RECEIPTS/female-voice-probe-20261010-01/`. Earlier receipts preserve the
+chronology. Full WAVs and original stems remain intact.
 
-A matched Heart→Bella stock-voice probe keeps words/windows, speed, seed and timing
-policy fixed. All ten male source stems match exactly. Bella's conversation has a
-625 ms next-cue overlap at cue 3, so Heart remains preferred pending a style verdict.
-No code changed or redundant tests rerun; new immutable receipt:
-`output/RECEIPTS/female-voice-probe-20261010-01/`.
-
-- Synthetic: http://127.0.0.1:18580/synthetic-review/index.html
-- Conversation: http://127.0.0.1:18580/conversation-review/index.html
-
-The preferred Heart is first on the synthetic page and second on the conversation
-page. Bella is a probe, with no claimed improvement until actual listening.
-
-## Latest page-relative preferences
-
-Operator again preferred the bottom audio on both new pages. Player order proves:
-
-- **Four-cue dialogue:** Bella with capped 1.15 timing, male Michael unchanged.
-- **Twelve-cue conversation:** Heart at normal speed.
-
-Selected original renders/audio hashes are recorded in the new immutable receipt
-`output/RECEIPTS/listening-preference-20261010-01/`. Keep these as separate preferred
-controls. The samples differ in corpus and timing policy, so this does not establish
-an overall voice ranking. The first-syllable criticism was not explicitly revisited;
-pronunciation details, speaker consistency and episode-length comfort remain open.
-Both original full WAVs and earlier comparison pages remain intact.
+Next voice experiment: identify one word/cue exhibiting the syllable emphasis,
+then change one performance lever using identical text, voice and timing windows.
+Accept only a listener-confirmed improvement with measured duration, residual
+overrun, next-cue overlap and clipping. A matching authorized local video/caption
+pair can independently unlock the real-playback trial. No further audio variants
+are required until one of these targets is available.

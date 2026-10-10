@@ -28,6 +28,20 @@ curl --fail --silent --show-error -X POST \
 
 Then use `--engine piper-http` as described in README. Piper is a **CPU baseline**, not necessarily the quality winner. One voice ≠ convincing anime character acting. The maintained code and model voices may have different licenses; verify before selecting voices.
 
+## Native CPU backends (ran on host)
+
+`piper-local` uses Piper 1.8.0/ONNX Runtime with explicit bounded worker settings;
+`kokoro` uses Kokoro 0.9.4 with pinned local weights and stock voices. Both completed
+three whole-set warmups and ten measured repetitions of the same 20 synthetic
+cues. See [CPU comparison](CPU-VOICE-COMPARISON.md) for measurement scopes and
+[handoff](HANDOFF.md) for runnable commands. Optional speech dependencies remain
+in isolated repository environments; the standard-library smoke path is preserved.
+
+Latest unblinded preferences favor Bella for fitted short synthetic dialogue and
+Heart for normal-speed conversation, with no global default change. Voice identity,
+words, windows and timing policy must be held fixed for a new targeted probe.
+Detailed pronunciation, consistency and whole-episode comfort remain unscored.
+
 ## Fish Audio S2 Pro (research candidate; not implemented)
 
 - Official implementation: https://github.com/fishaudio/fish-speech

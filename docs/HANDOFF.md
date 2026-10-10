@@ -61,7 +61,7 @@ carried into renders, and mismatched source hashes or clock modes fail. Bitmap c
 ## Verified scope and limits
 
 35 tests pass with optional dependencies; unchanged bare smoke passes with optional
-integrations skipped. All eight render/media manifests in the latest receipt
+integrations skipped. All eight render/media manifests in the bench-build receipt
 validate. Twenty extracted authored cues match text and milliseconds exactly.
 Headless Chromium checks play advancement, pause holding time, forward/backward
 seek, active captions and resumed frame/media clock. This muted automated check
@@ -79,10 +79,9 @@ remain in the receipt. Source separation, automatic casting, true dialogue
 alignment, expressive Fish inference, OCR/browser acquisition and live sync
 remain open. No unrelated service or GPU allocation was changed.
 
-Exact next experiment: listen to the short matched comparison, identify a cue or
-gap responsible for the pacing/style concern, and change one voice/performance
-setting on that same four-cue corpus. Record listener phrasing/comfort and measured
-original duration, overflow and gaps. Do not declare episode readiness from RTF.
+Exact next experiment: use the preferred controls in the current listening decision
+below. Identify a specific problematic word/cue before another voice probe;
+alternatively audit a matching authorized video/caption pair for real playback.
 
 ## Explicit source clock evidence
 
@@ -254,43 +253,26 @@ should not be presumed to improve pacing. Preserve unmodified baselines and do
 not trim audio. The played engine was not specified, so the present feedback
 cannot choose a model winner. No whole episode or live acquisition yet.
 
-## Latest operator listening feedback
+## Current listening decision
 
-Operator: “those are getting better.” This is positive perceived improvement, with
-sample/engine/variant attribution still unspecified. It does not establish a model
-winner or whole-episode comfort. Baselines remain unchanged. Clarify the preferred
-comparison/variant before choosing a single phrasing/pause lever for the next pass.
-New feedback receipt: `output/RECEIPTS/listening-feedback-20261010-01/`.
+The latest unblinded preferences select **Bella with capped 1.15 tempo fitting**
+for the four-cue synthetic dialogue, and **Heart at normal speed** for the
+12-cue conversation. Michael remains the synthetic male voice. These are
+separate preferred controls; differing corpora and timing policies do not support
+a universal voice winner. The earlier female first-syllable emphasis concern
+remains unresolved, and episode comfort has not been established.
 
-## Attributed listening verdict and female voice probe
+- [Synthetic comparison — preferred Bella is bottom](http://127.0.0.1:18580/synthetic-review/index.html)
+- [Conversation comparison — preferred Heart is bottom](http://127.0.0.1:18580/conversation-review/index.html)
 
-Operator prefers the bottom option of each comparison: capped 1.15 Kokoro timing
-adjustment, and Kokoro Heart on the Piper/Kokoro conversation. Female first-syllable
-emphasis remains a perceived defect. These are relative sample judgments, not a
-whole-episode or general engine-quality verdict.
+Exact selections and audio hashes live in the immutable local receipt
+`output/RECEIPTS/listening-preference-20261010-01/`; the voice probe is in
+`output/RECEIPTS/female-voice-probe-20261010-01/`. Earlier receipts preserve the
+chronology. Full WAVs and original stems remain intact.
 
-A matched Heart→Bella stock-voice probe keeps words/windows, speed, seed and timing
-policy fixed. All ten male source stems match exactly. Bella's conversation has a
-625 ms next-cue overlap at cue 3, so Heart remains preferred pending a style verdict.
-No code changed or redundant tests rerun; new immutable receipt:
-`output/RECEIPTS/female-voice-probe-20261010-01/`.
-
-- Synthetic: http://127.0.0.1:18580/synthetic-review/index.html
-- Conversation: http://127.0.0.1:18580/conversation-review/index.html
-
-The preferred Heart is first on the synthetic page and second on the conversation
-page. Bella is a probe, with no claimed improvement until actual listening.
-
-## Latest page-relative preferences
-
-Operator again preferred the bottom audio on both new pages. Player order proves:
-
-- **Four-cue dialogue:** Bella with capped 1.15 timing, male Michael unchanged.
-- **Twelve-cue conversation:** Heart at normal speed.
-
-Selected original renders/audio hashes are recorded in the new immutable receipt
-`output/RECEIPTS/listening-preference-20261010-01/`. Keep these as separate preferred
-controls. The samples differ in corpus and timing policy, so this does not establish
-an overall voice ranking. The first-syllable criticism was not explicitly revisited;
-pronunciation details, speaker consistency and episode-length comfort remain open.
-Both original full WAVs and earlier comparison pages remain intact.
+Next voice experiment: identify one word/cue exhibiting the syllable emphasis,
+then change one performance lever using identical text, voice and timing windows.
+Accept only a listener-confirmed improvement with measured duration, residual
+overrun, next-cue overlap and clipping. A matching authorized local video/caption
+pair can independently unlock the real-playback trial. No further audio variants
+are required until one of these targets is available.

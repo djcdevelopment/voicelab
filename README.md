@@ -1,6 +1,7 @@
 # Subtitle Lab — Local AI Dubbing R&D
 
-**Target location:** `/work/subtitle` on the Linux machine with **dual Intel Arc Pro B70 32 GB**, **Core Ultra 9 285K**, **128 GB DDR5**, and an Intel NPU.
+**Current checkout:** use this existing repository in place. The starter archive
+originally targeted `/work/subtitle` on the Linux machine with **dual Intel Arc Pro B70 32 GB**, **Core Ultra 9 285K**, **128 GB DDR5**, and an Intel NPU.
 
 **Mission:** Find the shortest credible path from timed English subtitles to a locally generated, scene-synchronized English dialogue track. After proving an offline run, investigate acquiring **visible** subtitles from browser playback via accessible tracks or OCR, and subsequently experimental live dubbing. This is a personal R&D project, **not a commercial product**.
 
@@ -8,7 +9,8 @@
 manual casting, measured timing, opt-in capped tempo fitting, authorized local
 text-track extraction, and synchronized MP4 playback. Synthetic media passes
 pause/seek/caption checks. Operator found speech understandable but questioned
-pacing/style for a whole episode. Fish XPU, automatic character casting, original
+pacing/style for a whole episode. Latest excerpt preferences favor Bella for
+fitted short dialogue and Heart for normal-speed conversation. Fish XPU, automatic character casting, original
 soundtrack separation and live capture remain open. See [HANDOFF](docs/HANDOFF.md)
 for runnable commands and complete playback links.
 
@@ -21,9 +23,10 @@ for runnable commands and complete playback links.
 - `docs/`: design boundaries, hardware questions, evaluation gates, references.
 - `prompts/BUILDER-PROMPT.md`: self-contained handoff to a cold engineering agent.
 
-## Extract to exactly `/work/subtitle`
+## Original starter archive setup (historical)
 
-The archive has **no enclosing top-level directory**. Extract its contents into `/work/subtitle`:
+The existing checkout is already initialized; the instructions below apply only
+to a fresh starter archive. The archive has **no enclosing top-level directory**. Extract its contents into `/work/subtitle`:
 
 ```bash
 # Set this to the downloaded zip's actual location:
@@ -109,3 +112,7 @@ capture and live platform integration remain future gates.
 5. **Use authorized content:** work from synthetic inputs or subtitle/media you are permitted to access. No circumvention of DRM, account controls, or platform authentication.
 
 Begin with `docs/GATES.md`, `docs/HARDWARE.md`, and `prompts/BUILDER-PROMPT.md`.
+
+Session closeout: [retrospective](docs/RETROSPECTIVE-20261010.md),
+[CPU speech and evidence decision](docs/adr/0001-cpu-speech-and-evidence-gates.md),
+and [completion audit](docs/COMPLETION-AUDIT.md).

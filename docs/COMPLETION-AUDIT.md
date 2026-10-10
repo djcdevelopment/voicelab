@@ -20,7 +20,7 @@ now favor Bella for fitted short dialogue and Heart for normal-speed conversatio
 | 8. Current Fish/lighter-candidate research and host enumeration | Saved upstream model/install/license sources; actual Torch XPU enumeration; Kokoro CPU trial | Documented vs ran-on-host separated. Fish inference is unproven; cards remain occupied |
 | 9. Same-20-cue bounded A/B protocol | Corpus identical across both CPU arms; 3 complete warmups + 10 complete measurements each, actual latency/resources | Technical comparison verified. Sequential runs, casting differs; unblinded excerpt preferences recorded; no blinded quality or speaker-consistency verdict. Fish smoke deferred for capacity |
 | 10. Authorized source first; OCR optional; no protections bypass | Synthetic embedded-track extraction plus public CC BY Sintel captions; maintained parser crosscheck and caption bounds audit | Caption acquisition ran. Matching full-film video unavailable; trailer/caption mismatch rejected. OCR/live platform capture deferred |
-| Required plan, receipts, handoff, small local commits | FRONTIER-PLAN.md, HANDOFF.md, five sealed experiment receipts and small commits | Present and verified locally; no pushes |
+| Required plan, receipts, handoff, small local commits | FRONTIER-PLAN.md, HANDOFF.md, sealed baseline, benchmark, playback, source, audit and listening receipts; small commits | Present and verified locally; closeout committed on master. No remote is configured; no push possible yet |
 
 ## Broader gates
 
@@ -48,8 +48,8 @@ now favor Bella for fitted short dialogue and Heart for normal-speed conversatio
 
 Current complete listening links:
 
-- Four-cue timing comparison: http://127.0.0.1:18576/short-review/index.html
-- Real-caption conversation: http://127.0.0.1:18579/review/index.html
+- Preferred Bella/Heart synthetic comparison: http://127.0.0.1:18580/synthetic-review/index.html
+- Preferred Heart/Bella conversation comparison: http://127.0.0.1:18580/conversation-review/index.html
 
 Adding engines, fixtures or a larger framework without resolving these evidence
 requirements would not prove the requested outcome. The repeated blockers are

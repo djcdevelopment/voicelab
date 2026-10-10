@@ -10,7 +10,7 @@ real-source evidence. Detailed receipts remain local and ignored by git.
 | G2 | Tone/WAV composition, checksums, no-truncation tests | Tone is not speech evidence |
 | G3 | Piper and Kokoro CPU; 3 warmups + 10 measured sets; preliminary intelligibility feedback | Pronunciation, acting and episode comfort remain unscored |
 | G4 | Upstream Fish XPU research; actual host enumeration | Fish inference blocked by occupied cards; compatibility unproven |
-| G5 | Two manually assigned Kokoro voices; capped tempo fit retains originals | Listener consistency/naturalness verdict; character inference absent |
+| G5 | Two manually assigned Kokoro voices; capped tempo fit retains originals | Bella/Heart excerpt preferences recorded; consistency and episode comfort unscored; character inference absent |
 | G6 | Authored video text track: all 20 cues exact, then real speech synthesis; explicit nonzero-origin mapping tested | 26 published CC BY captions parsed/synthesized; matching full-film video unavailable; browser/OCR not implemented |
 | G7 | Synthetic offline MP4: shared clock, play/pause, seeks both ways and active captions pass Chromium automation | Human Firefox video/audio review; real soundtrack separation and live sync absent |
 
