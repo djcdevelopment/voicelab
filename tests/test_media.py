@@ -56,3 +56,47 @@ class MediaTests(unittest.TestCase):
         out=self.base/'extract';extract_captions(self.source,out)
         (out/'subtitles.srt').write_text('changed')
         with self.assertRaises(RuntimeError):validate_media(out)
+
+    def shifted_source(self):
+        shifted=self.base/'shifted.mkv'
+        subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-nostdin','-n',
+            '-copyts','-itsoffset','2','-i',str(self.source),'-map','0','-c','copy',str(shifted)],check=True)
+        combined=self.base/'early-audio.mkv'
+        subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-nostdin','-n',
+            '-copyts','-i',str(shifted),'-f','lavfi','-i','sine=frequency=180:duration=4',
+            '-map','0:v:0','-map','0:s:0','-map','1:a:0','-c:v','copy','-c:s','copy',
+            '-c:a','pcm_s16le',str(combined)],check=True)
+        return combined
+
+    def test_explicit_video_clock_ignores_earlier_original_audio_origin(self):
+        source=self.shifted_source()
+        info=probe(source)
+        self.assertEqual(info['video_first_pts_s'],2)
+        self.assertEqual(next(s for s in info['streams'] if s['type']=='audio')['start_s'],0)
+        out=self.base/'mapped';result=extract_captions(source,out,clock='video')
+        self.assertEqual(load_cues(out/'subtitles.srt'),load_cues(self.captions))
+        self.assertEqual(load_cues(out/'source-subtitles.srt')[0].start_ms,2100)
+        self.assertEqual(result['clock_mapping']['subtitle_offset_ms'],2000)
+        run=self.base/'speech';render(out/'subtitles.srt',run,ToneEngine(),'tone')
+        with self.assertRaisesRegex(ValueError,'clock mappings disagree'):
+            compose_video(source,run,self.base/'unmapped')
+        different=self.base/'different-source.mkv';different.write_bytes(self.source.read_bytes())
+        with self.assertRaisesRegex(ValueError,'different source media'):
+            compose_video(different,run,self.base/'wrong-source',clock='video')
+        playback=self.base/'playback';compose_video(source,run,playback,clock='video')
+        played=probe(playback/'dubbed.mp4')
+        self.assertAlmostEqual(played['video_first_pts_s'],0,places=3)
+        self.assertAlmostEqual(played['video_end_pts_s'],2,places=3)
+        self.assertEqual(validate_media(playback)['status'],'PASS')
+
+    def test_captions_before_video_are_preserved_as_failure_not_clipped(self):
+        shifted=self.shifted_source();source=self.base/'early-captions.mkv'
+        subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-nostdin','-n',
+            '-copyts','-i',str(shifted),'-i',str(self.captions),'-map','0:v:0','-map','1:s:0',
+            '-c:v','copy','-c:s','srt',str(source)],check=True)
+        out=self.base/'failed-extraction'
+        with self.assertRaisesRegex(ValueError,'refusing to discard or clip'):
+            extract_captions(source,out,clock='video')
+        self.assertEqual(load_cues(out/'source-subtitles.srt'),load_cues(self.captions))
+        self.assertTrue((out/'failure.json').is_file())
+        self.assertFalse((out/'subtitles.srt').exists())

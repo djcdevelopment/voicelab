@@ -42,6 +42,7 @@ def main(argv: list[str] | None = None) -> int:
     extract = commands.add_parser('extract',help='Extract an authorized local text caption track with FFmpeg')
     extract.add_argument('source',type=Path)
     extract.add_argument('--subtitle-index',type=int,default=0)
+    extract.add_argument('--clock',choices=('source','video'),default='source',help='Explicitly rebase captions to first video PTS; raw source captions retained')
     extract.add_argument('--out',type=Path,required=True)
     compose = commands.add_parser('compose',help='Mux generated speech with local video for one-clock playback')
     compose.add_argument('source',type=Path)
@@ -50,6 +51,7 @@ def main(argv: list[str] | None = None) -> int:
     compose.add_argument('--background',type=Path,help='Explicitly supplied instrumental/permissioned WAV bed')
     compose.add_argument('--background-gain',type=float,default=.15)
     compose.add_argument('--transcode-video',action='store_true',help='Explicit CPU H.264 conversion instead of streamcopy')
+    compose.add_argument('--clock',choices=('source','video'),default='source',help='With video clock, render cues must already be relative to first video PTS')
     media_checker = commands.add_parser('validate-media',help='Check extracted caption or playback artifact hashes')
     media_checker.add_argument('run',type=Path)
     reviewer = commands.add_parser('serve',help='Serve local review audio/video with HTTP Range support')
@@ -105,9 +107,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             from .media import probe,extract_captions,compose_video,validate_media
             if args.command == 'probe-media':result = probe(args.source)
-            elif args.command == 'extract':result = extract_captions(args.source,args.out,args.subtitle_index)
+            elif args.command == 'extract':result = extract_captions(args.source,args.out,args.subtitle_index,clock=args.clock)
             elif args.command == 'compose':result = compose_video(args.source,args.run,args.out,
-                background=args.background,background_gain=args.background_gain,transcode=args.transcode_video)
+                background=args.background,background_gain=args.background_gain,transcode=args.transcode_video,clock=args.clock)
             else:result = validate_media(args.run)
         if getattr(args, "out", None) is not None and args.command in ('doctor','inspect'):
             args.out.parent.mkdir(parents=True, exist_ok=True)

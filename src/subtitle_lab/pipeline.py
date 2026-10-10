@@ -42,6 +42,17 @@ def render(source: Path, destination: Path, engine: Engine, engine_name: str,
         raise FileExistsError(f'Refusing to overwrite existing run: {destination}')
     if fit_max_speedup is not None and (not math.isfinite(fit_max_speedup) or not 1 <= fit_max_speedup <= 1.5):
         raise ValueError('Explicit fit speedup cap must be between 1 and 1.5')
+    extraction=source.parent/'media-manifest.json'
+    extraction_snapshot=None
+    if source.name=='subtitles.srt' and extraction.is_file():
+        from .media import validate_media
+        validate_media(extraction)
+        provenance=json.loads(extraction.read_text())
+        if provenance['kind']!='caption-extraction-v1':
+            raise ValueError('Subtitle extraction provenance has unexpected kind')
+        if provenance['artifacts']['subtitles.srt']!=file_sha256(source):
+            raise ValueError('Extraction provenance does not match subtitle source')
+        extraction_snapshot='source-extraction.json'
     engine.prepare(cues)
     destination.mkdir(parents=True)
     began = time.perf_counter()
@@ -51,6 +62,7 @@ def render(source: Path, destination: Path, engine: Engine, engine_name: str,
             (destination/'processed').mkdir()
         snapshot = destination/('source'+source.suffix.lower())
         shutil.copyfile(source,snapshot)
+        if extraction_snapshot:shutil.copyfile(extraction,destination/extraction_snapshot)
         (destination/'cues.json').write_text(json.dumps([asdict(c) for c in cues],ensure_ascii=False,indent=2)+'\n')
         (destination/'transcript.txt').write_text('\n'.join(
             f'[{c.start_ms/1000:08.3f} -> {c.end_ms/1000:08.3f}] '
@@ -124,6 +136,7 @@ def render(source: Path, destination: Path, engine: Engine, engine_name: str,
             'timing_policy':{'mode':'tempo-cap' if fit_max_speedup is not None else 'preserve',
                              'max_speedup':fit_max_speedup,'target':'source-cue-window','truncate':False},
             'warnings':warnings,'cues':records}
+        if extraction_snapshot:result['source_extraction_snapshot']=extraction_snapshot
         report=['# Subtitle Lab render','',f'Engine: {engine_name}. Original stems are retained.',
                 f'Cues: {len(records)}; >250 ms overruns: {over}; next-start overlaps: {overlap}.',
                 f'Timing policy: {result["timing_policy"]["mode"]}; adjusted cues: {result["metrics"]["fit_changed_cues"]}.',
@@ -159,6 +172,7 @@ def validate(path: Path) -> dict:
         if manifest.get('timing_policy',{}).get('truncate') is not False:
             raise ValueError('Unexpected truncation policy')
         required={manifest['source_snapshot'],'cues.json','transcript.txt','report.md',manifest['audio']['file']}
+        if manifest.get('source_extraction_snapshot'):required.add(manifest['source_extraction_snapshot'])
         required.update(c['stem'] for c in manifest['cues'])
         required.update(c['processed_stem'] for c in manifest['cues'] if 'processed_stem' in c)
         if not required <= manifest['artifacts'].keys():

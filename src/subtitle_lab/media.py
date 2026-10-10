@@ -6,6 +6,7 @@ import math
 import shutil
 import subprocess
 from html import escape
+from dataclasses import replace
 
 from .audio import load_pcm16_mono, mix_to_wav
 from .pipeline import file_sha256, validate
@@ -62,9 +63,24 @@ def _seal_manifest(result: dict, out: Path):
     return result
 
 
-def extract_captions(source: Path,destination: Path,subtitle_index: int=0) -> dict:
+def _clock(info: dict, mode: str) -> dict:
+    if mode not in ('source','video'):raise ValueError('Clock must be source or video')
+    first=info['video_first_pts_s']
+    if mode=='video' and first is None:raise ValueError('Video clock requires timestamped video')
+    origin=first if mode=='video' else 0.0
+    offset_ms=round(origin*1000)
+    return {'mode':mode,'video_origin_s':first,'subtract_source_s':origin,
+            'subtitle_offset_ms':offset_ms,'subtitle_rounding_error_ms':offset_ms-origin*1000}
+
+
+def _stamp(ms: int,decimal: str='.') -> str:
+    return f'{ms//3600000:02}:{ms//60000%60:02}:{ms//1000%60:02}{decimal}{ms%1000:03}'
+
+
+def extract_captions(source: Path,destination: Path,subtitle_index: int=0,*,clock: str='source') -> dict:
     if type(subtitle_index) is not int or subtitle_index<0:raise ValueError('Subtitle index must be nonnegative')
     info=probe(source)
+    mapping=_clock(info,clock)
     tracks=[s for s in info['streams'] if s['type']=='subtitle']
     if subtitle_index>=len(tracks):raise ValueError(f'No subtitle stream {subtitle_index}; {len(tracks)} present')
     selected=tracks[subtitle_index]
@@ -72,12 +88,22 @@ def extract_captions(source: Path,destination: Path,subtitle_index: int=0) -> di
         raise ValueError(f'Subtitle codec {selected["codec"]} is not a text track; no silent OCR fallback')
     out=_new_output(destination)
     try:
+        extracted=out/('source-subtitles.srt' if clock=='video' else 'subtitles.srt')
         _ffmpeg(['-protocol_whitelist','file,pipe','-copyts','-i',info['source'],
-                 '-map',f'0:{selected["index"]}','-c:s','srt',str(out/'subtitles.srt')],out)
-        cues=load_cues(out/'subtitles.srt')
+                 '-map',f'0:{selected["index"]}','-c:s','srt',str(extracted)],out)
+        cues=load_cues(extracted)
+        if clock=='video':
+            cues=[replace(c,start_ms=c.start_ms-mapping['subtitle_offset_ms'],
+                          end_ms=c.end_ms-mapping['subtitle_offset_ms']) for c in cues]
+            if any(c.start_ms<0 for c in cues):
+                raise ValueError('Subtitle precedes first video frame; refusing to discard or clip it')
+            (out/'subtitles.srt').write_text('\n\n'.join(
+                f'{c.index}\n{_stamp(c.start_ms,",")} --> {_stamp(c.end_ms,",")}\n{escape(c.text)}'
+                for c in cues)+'\n')
         (out/'cues.json').write_text(json.dumps([c.to_dict() for c in cues],indent=2)+'\n')
         return _seal_manifest({'kind':'caption-extraction-v1','source':info,'selected_stream':selected,
-            'summary':summary(cues),'timestamp_policy':'preserve source PTS; no offset guessed',
+            'summary':summary(cues),'clock_mapping':mapping,
+            'timestamp_policy':'explicit video-origin subtraction, raw extraction retained' if clock=='video' else 'preserve source PTS; no offset guessed',
             'rights_basis':'operator-provided authorized local media'},out)
     except Exception as exc:
         (out/'failure.json').write_text(json.dumps({'exception':type(exc).__name__,'message':str(exc)},indent=2)+'\n')
@@ -85,16 +111,27 @@ def extract_captions(source: Path,destination: Path,subtitle_index: int=0) -> di
 
 
 def compose_video(source: Path,run: Path,destination: Path,*,background: Path|None=None,
-                  background_gain: float=.15,transcode: bool=False) -> dict:
+                  background_gain: float=.15,transcode: bool=False,clock: str='source') -> dict:
     if not math.isfinite(background_gain) or not 0<=background_gain<=1:
         raise ValueError('Background gain must be finite between 0 and 1')
     validate(run)
     manifest=json.loads((run/'manifest.json').read_text())
     info=probe(source)
+    mapping=_clock(info,clock)
     start=info['video_first_pts_s'];end=info['video_end_pts_s']
+    if manifest.get('source_extraction_snapshot'):
+        extraction=json.loads((run/manifest['source_extraction_snapshot']).read_text())
+        expected=extraction.get('clock_mapping',{'mode':'source'})
+        if extraction['source']['sha256']!=info['sha256']:
+            raise ValueError('Rendered captions belong to different source media')
+        if expected['mode']!=clock or abs(expected.get('subtract_source_s',0)-mapping['subtract_source_s'])>.000001:
+            raise ValueError('Render and video clock mappings disagree; use the extraction clock')
+        if extraction['artifacts']['subtitles.srt']!=manifest['source_sha256']:
+            raise ValueError('Render subtitle identity disagrees with extraction')
     if start is None or end is None:raise ValueError('Media has no timestamped video stream')
-    if abs(start)>.001:
+    if clock=='source' and abs(start)>.001:
         raise ValueError('Nonzero video origin needs an explicit clock mapping; this path requires zero-origin media')
+    end-=mapping['subtract_source_s']
     speech_end=max(c['start_ms']+c['speech_duration_ms'] for c in manifest['cues'])/1000
     if speech_end>end+.001:
         raise ValueError(f'Dialogue ends at {speech_end:.3f}s after video {end:.3f}s; refusing truncation')
@@ -113,7 +150,7 @@ def compose_video(source: Path,run: Path,destination: Path,*,background: Path|No
         # The dialogue mix's 200ms final silence is not a speech utterance.
         timeline_ms=max(round(end*1000),round(len(dialogue)*1000/24000))
         mix=mix_to_wav(placements,out/'playback-audio.wav',timeline_ms,gain=1.0)
-        args=['-protocol_whitelist','file,pipe','-i',info['source'],
+        args=['-copyts','-protocol_whitelist','file,pipe','-itsoffset',str(-mapping['subtract_source_s']),'-i',info['source'],
               '-i',str(out/'playback-audio.wav'),'-map','0:v:0','-map','1:a:0']
         if transcode:args+=['-c:v','libx264','-preset','veryfast','-threads','2','-pix_fmt','yuv420p']
         else:args+=['-c:v','copy']
@@ -123,11 +160,10 @@ def compose_video(source: Path,run: Path,destination: Path,*,background: Path|No
         _ffmpeg(args,out)
         output_info=probe(out/'dubbed.mp4')
         if not any(s['type']=='audio' for s in output_info['streams']):raise RuntimeError('Mux produced no audio stream')
+        if abs(output_info['video_first_pts_s'])>.001:raise RuntimeError('Mux did not preserve zero playback origin')
         if abs(output_info['video_end_pts_s']-end)>.05:raise RuntimeError('Mux changed video clock unexpectedly')
-        def stamp(ms):
-            return f'{ms//3600000:02}:{ms//60000%60:02}:{ms//1000%60:02}.{ms%1000:03}'
         (out/'captions.vtt').write_text('WEBVTT\n\n'+'\n\n'.join(
-            f'{c["index"]}\n{stamp(c["start_ms"])} --> {stamp(c["end_ms"])}\n{escape(c["text"])}'
+            f'{c["index"]}\n{_stamp(c["start_ms"])} --> {_stamp(c["end_ms"])}\n{escape(c["text"])}'
             for c in manifest['cues'])+'\n')
         (out/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>Subtitle Lab playback</title>'
             '<h1>Offline synchronized playback</h1><video controls preload="metadata" src="dubbed.mp4">'
@@ -139,7 +175,7 @@ def compose_video(source: Path,run: Path,destination: Path,*,background: Path|No
             'dialogue_wav_sha256':file_sha256(run/'dub.wav'),
             'original_audio_policy':'discarded; source separation not performed',
             'background':{'source':str(background.resolve()),'sha256':file_sha256(background),'gain':background_gain} if background else None,
-            'speech_end_s':speech_end,'video_end_s':end,'mix':mix,'output_probe':output_info,
+            'speech_end_s':speech_end,'video_end_s':end,'clock_mapping':mapping,'mix':mix,'output_probe':output_info,
             'sync_policy':'one muxed file, shared clock','transcoded_video':transcode},out)
     except Exception as exc:
         (out/'failure.json').write_text(json.dumps({'exception':type(exc).__name__,'message':str(exc)},indent=2)+'\n')
