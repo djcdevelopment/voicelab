@@ -9,7 +9,7 @@ Machine details remain in ignored receipts, including `bench-build-20261010-01`.
 
 The extracted checkout is the session workspace; the requested `/work/subtitle`
 was empty. Work stayed in the existing checkout. No existing service was changed.
-The original smoke passed 12 tests; the latest suite contains 34 tests; optional integrations skip on a bare host. The original parser repair brought the suite to 13. SRT, VTT and ASS
+The original smoke passed 12 tests; the latest suite contains 35 tests; optional integrations skip on a bare host. The original parser repair brought the suite to 13. SRT, VTT and ASS
 synthetic tone renders validate. WebVTT NOTE/STYLE/REGION metadata is skipped;
 a regression test prevents a NOTE timing example becoming speech.
 
@@ -119,7 +119,12 @@ Live pause/seek reconciliation waits until the offline chain passes listening.
    evidence, not a quality winner. Accept only after a listener identifies the
    awkward cue/gap and scores phrasing/comfort. Choose one voice or performance
    lever from that defect; preserve words and original audio.
-2. **Permissioned source clock trial (medium complexity, 20–30 min once media exists).**
+2. **Matching permissioned video trial (medium complexity, 20–30 min once available).**
+   A real-caption slice now downloaded CC BY Sintel captions: 26 cues agree with
+   pysubs2 and synthesize on both CPU engines. Audio comparison:
+   http://127.0.0.1:18579/review/index.html . The available W3C video is a trailer;
+   `audit-captions` rejects the full-film captions against it. Full-film routes
+   returned 403; the source mismatch remains unresolved.
    Extract one authorized local text track, audit timestamps/line completeness,
    synthesize and compose. Synthetic 20-cue extraction currently has zero missing,
    duplicate, text or timing errors; both playback seeks pass. Accept only with

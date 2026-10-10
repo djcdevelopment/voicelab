@@ -60,7 +60,7 @@ carried into renders, and mismatched source hashes or clock modes fail. Bitmap c
 
 ## Verified scope and limits
 
-34 tests pass with optional dependencies; unchanged bare smoke passes with optional
+35 tests pass with optional dependencies; unchanged bare smoke passes with optional
 integrations skipped. All eight render/media manifests in the latest receipt
 validate. Twenty extracted authored cues match text and milliseconds exactly.
 Headless Chromium checks play advancement, pause holding time, forward/backward
@@ -100,6 +100,37 @@ Player: http://127.0.0.1:18578/playback-bound/index.html
 .venv/bin/python -m subtitle_lab render output/mapped-captions-new/subtitles.srt --engine piper-local --model models/piper/en_US-lessac-medium.onnx --threads 2 --out output/mapped-speech-new
 .venv/bin/python -m subtitle_lab compose local_media/authorized.mkv output/mapped-speech-new --clock video --out output/mapped-playback-new
 ```
+
+## Permissioned caption-source trial
+
+Public Sintel English captions were acquired from Xiph with their CC BY 3.0
+copyright notice. All 26 cues agree exactly with pysubs2 1.9.0 on text/timing;
+Piper and Kokoro synthesized every cue. One-shot results: Piper 39.846 s speech,
+zero >250 ms overruns; Kokoro 54.275 s, two. Neither has >250 ms next-start overlap
+or mixed clipping. These results have no repeated benchmark or listener verdict.
+
+Conversation comparison (first 12 cues, about 49 seconds):
+http://127.0.0.1:18579/review/index.html
+
+The W3C video is a 52.208-second trailer; the Xiph captions belong to the full
+film and begin at 107.250 seconds. The new bounds audit rejects all 26 cues for
+that trailer (exit 1), so these files were not composed. Full-film download routes
+checked this slice returned 403, or 404 for a nonexistent W3C movie file. Those
+are recorded blockers, not a reason to bypass access controls or invent offsets.
+
+Before synthesis on a supplied video/caption pair:
+
+```bash
+.venv/bin/python -m subtitle_lab audit-captions local_media/authorized.mkv local_media/captions.srt --clock source --out output/caption-audit-new.json
+```
+
+Use `--clock video` only for captions already rebased to the first video frame.
+PASS proves timestamps fall within video bounds; it does not verify caption words,
+completeness, edition matching or dialogue alignment. The receipt remains local at
+`output/RECEIPTS/permissioned-source-20261010-01/`. No source subtitles/media were
+committed. Attribution, URLs, checksums and unsuccessful source requests are kept
+there. Current next source experiment requires a matching authorized full film;
+keep the real-caption audio comparison for listener judgment in the meantime.
 
 ## Earlier bounded CPU benchmark handoff
 
