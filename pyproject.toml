@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "subtitle-lab"
+version = "0.1.0"
+description = "Local subtitle to speech experiment harness with evidence receipts"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+subtitle-lab = "subtitle_lab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

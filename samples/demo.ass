@@ -1,0 +1,15 @@
+[Script Info]
+Title: Synthetic subtitle timing fixture
+ScriptType: v4.00+
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour
+Style: Default,Arial,20,&H00FFFFFF
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.60,0:00:02.70,Default,Narrator,0,0,0,,Our first test needs no streaming credentials.
+Dialogue: 0,0:00:03.00,0:00:05.60,Default,Narrator,0,0,0,,It should preserve {\i1}subtitle{\i0} timing.
+Dialogue: 0,0:00:06.00,0:00:08.50,Default,Narrator,0,0,0,,The tone engine is only a synchronization probe.
+Dialogue: 0,0:00:09.10,0:00:12.00,Default,Narrator,0,0,0,,Next we can connect a local voice engine.
+Dialogue: 0,0:00:12.30,0:00:16.00,Default,Narrator,0,0,0,,Every experiment must leave measurements and reproducible evidence.

@@ -1,0 +1,19 @@
+1
+00:00:00,600 --> 00:00:02,700
+Our first test needs no streaming credentials.
+
+2
+00:00:03,000 --> 00:00:05,600
+It should preserve subtitle timing.
+
+3
+00:00:06,000 --> 00:00:08,500
+The tone engine is only a synchronization probe.
+
+4
+00:00:09,100 --> 00:00:12,000
+Next we can connect a local voice engine.
+
+5
+00:00:12,300 --> 00:00:16,000
+Every experiment must leave measurements and reproducible evidence.

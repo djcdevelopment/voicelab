@@ -1,0 +1,19 @@
+WEBVTT
+
+NOTE This is a synthetic English test fixture, not a copied episode.
+
+intro
+00:00:00.600 --> 00:00:02.700 align:start position:0%
+<v Narrator>Our first test needs no streaming credentials.</v>
+
+00:00:03.000 --> 00:00:05.600
+It should preserve <i>subtitle</i> timing.
+
+00:00:06.000 --> 00:00:08.500
+The tone engine is only a synchronization probe.
+
+00:00:09.100 --> 00:00:12.000
+Next we can connect a local voice engine.
+
+00:00:12.300 --> 00:00:16.000
+Every experiment must leave measurements and reproducible evidence.
