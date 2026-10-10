@@ -9,6 +9,13 @@ SAMPLES = Path(__file__).resolve().parents[1] / "samples"
 
 
 class SubtitleParsingTests(unittest.TestCase):
+    def test_vtt_note_with_timestamp_is_not_spoken(self):
+        source = "WEBVTT\n\nNOTE editor example\n00:00:00.000 --> 00:00:01.000\nDo not speak this.\n\ncue-id\n00:00:02.000 --> 00:00:03.000 align:start\n<v Mai>Keep this.\n"
+        cues = parse_srt_vtt(source)
+        self.assertEqual(len(cues), 1)
+        self.assertEqual((cues[0].start_ms, cues[0].text, cues[0].speaker),
+                         (2000, "Keep this.", "Mai"))
+
     def test_timestamps(self):
         self.assertEqual(timestamp_ms("00:01:23,456"), 83456)
         self.assertEqual(timestamp_ms("01:23.45"), 83450)

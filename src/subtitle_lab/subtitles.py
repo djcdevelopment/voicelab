@@ -74,6 +74,12 @@ def parse_srt_vtt(content: str) -> list[Cue]:
     cues: list[Cue] = []
     i = 0
     while i < len(lines):
+        # WebVTT metadata blocks can contain timing-looking examples. They
+        # are not dialogue and must never reach speech synthesis.
+        if re.match(r"^(?:NOTE(?:[ \t].*)?|STYLE|REGION)$", lines[i].strip()):
+            while i < len(lines) and lines[i].strip():
+                i += 1
+            continue
         match = TIMING.match(lines[i])
         if match is None:
             i += 1
