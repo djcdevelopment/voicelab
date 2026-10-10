@@ -1,18 +1,27 @@
-# Pilot experiment matrix — initial proposal
+# Experiment matrix — evidence checked 2026-10-10
 
-| Arm | Generation method | Backend hardware | Outcome needed | Status |
-|---|---|---|---|---|
-| A | Synthetic tones | CPU | Validate cue timestamps, overlap, checksums and report | Working starter |
-| B | Single English voice | Piper HTTP, likely CPU | Evaluate real intelligible dialogue and timing deltas | Adapter ready; external server required |
-| C | Expressive voice | Fish S2 Pro candidate | Validate Intel Arc XPU functionality and audio quality | Untested |
-| D | Second expressive contender | Arc or CPU, verified compatible | Compare quality/RTF/complexity against C | To select |
-| E | Two manual character voices | Any proven backend | Test continuity, overlapping dialogue and audience rating | Planned |
-| F | Subtitle OCR vs soft track | Accessible samples | Compare completeness, timing lag, text error | Planned |
+| Arm | Method | Running evidence | Acceptance gap |
+|---|---|---|---|
+| A | Synthetic tones, CPU | SRT/VTT/ASS renders, hashes, deterministic repeat, timing regressions | Diagnostic audio only |
+| B | Piper HTTP/native CPU | Real English WAV; cold demo; 3 warmups + 10 measured 20-cue sets; resource limits audited | Detailed listener quality/pronunciation |
+| C | Fish S2 Pro on Arc | Upstream XPU/model/license research and actual host enumeration | Safe capacity and actual inference; compatibility unproven |
+| D | Kokoro CPU | 3 warmups + 10 measured 20-cue sets; two stock voices; native CLI and external WAV path | Acting, listener comfort and comparison verdict |
+| E | Manual casting / timing probe | Explicit voice plan; baseline, speed 0.95, capped 1.15 tempo; original WAVs retained | Speaker continuity and naturalness verdict |
+| F | Authorized subtitle source | Exact 20-cue synthetic extraction; 26 CC BY real captions match pysubs2; wrong video cut rejected | Matching authorized real video; OCR optional and deferred |
+| G | Offline shared-clock playback | Native MP4 play/pause/seek/captions; explicit video-origin mapping; first/last decoded audio correlation | Human review on real matching media; soundtrack separation/live sync separate |
 
-For B–D, hold a fixed synthetic 20-line English corpus across all engines. Include:
-- 5 short (<1.5 seconds window) cues
-- 5 average spoken sentences
-- 5 emotional/fast-paced lines
-- 5 overlapping / scene-transition cases
+The measured CPU arms use the frozen `samples/dialogue20.srt`, identical normalized
+words/windows, three complete warmups and ten complete measurements. The old
+proposal for five overlapping source cues was not the measured corpus: the frozen
+20-cue fixture has no source-window overlaps. Supplied shorter fixtures do produce
+actual speech overlap, recorded separately. Do not change the benchmark corpus to
+make prior claims fit a proposal.
 
-Every arm must have an actual WAV, a timed manifest, environment/weights IDs, a short listener note, and a clear pass/fail. Aggregate both mean and tail latency; always distinguish cold versus warm generation. Use a separate memo for licensing and available reference-voice permissions before experiments involving recognizable people's voices.
+The two CPU arms ran sequentially, with one Piper voice and two Kokoro voices.
+Their resource scopes differ. They establish feasibility rather than a blinded
+quality ranking. Exact versions, source/model hashes, cold/warm metrics and all
+failures remain in ignored receipts. No quality scores are fabricated.
+
+Rate/tempo and published-caption probes are single-run experiments, not repeated
+benchmarks. Use the same words/windows for each lever, preserve originals, and
+collect listener judgments before interpreting timing improvements as better acting.
