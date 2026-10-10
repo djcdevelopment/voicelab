@@ -56,7 +56,7 @@ not a quality ranking. See `docs/CPU-VOICE-COMPARISON.md` for definitions.
 
 Listening player with complete URLs: http://127.0.0.1:18574/ . It offers MP3
 listening copies and original WAV downloads. Server responses and decode were
-checked; operator confirmed successful audio playback. Qualitative ratings remain pending.
+checked; operator confirmed successful audio playback. Operator found the played sample understandable but raised pacing/style concerns for a whole episode. Engine attribution and full-cue coverage are unspecified; detailed ratings remain pending.
 No machine audio settings were changed. Blank listener scores stay blank until
 an actual verdict; put annotations in a fresh receipt, preserving sealed runs.
 
@@ -114,11 +114,12 @@ Live pause/seek reconciliation waits until the offline chain passes listening.
    player URL, listen to all 20 cues, and copy the scoring sheet to a fresh receipt.
    Accept only with intelligibility/pronunciation, acting and speaker-consistency
    judgments. CPU bounding is completed; no longer a prerequisite to rerun.
-2. **One timing lever (low/medium complexity; about 20 min after listening passes).**
-   Compare Kokoro speed 1.0 versus 1.15 on the same fixed text/windows, preserving
-   original WAVs. Measure duration/overrun and listener degradation. Accept only
-   if the faster rendition improves timing without omitted or audibly cut words.
-   No silent edits; a subtitle window is not a true dialogue window.
+2. **Phrasing/pause probe (low/medium complexity; about 20 min).** Mark four
+   awkward utterances or gaps, then compare identical text and placements with
+   one stock voice or rate change at a time. Accept only with intelligibility,
+   natural phrasing and listening-comfort evidence plus measured duration/overrun.
+   Speeding up may enlarge gaps; choose the lever from the marked defect, not
+   generation speed. Preserve baseline WAVs; no truncation or silent text edits.
 3. **One-card Fish XPU feasibility (medium/high risk; 15-min smoke once capacity exists).**
    First recheck workload pressure and device mapping; do not free resources by
    changing existing services. One line, compile disabled initially, no casting

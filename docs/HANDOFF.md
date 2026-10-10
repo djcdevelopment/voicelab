@@ -2,7 +2,7 @@
 
 The existing session checkout remains the repo. No second repo was created and
 nothing was pushed. Synthetic subtitle → real local speech → timed WAV works
-with Piper and Kokoro. Listening quality and true dialogue timing remain pending.
+with Piper and Kokoro. Operator found the sample understandable but raised episode-length pacing/style concerns. Detailed quality ratings and true dialogue timing remain pending.
 
 ## Listen using complete URLs
 
@@ -102,8 +102,7 @@ cue start. Piper PCM endpoint values occur after upstream peak normalization;
 that alone does not prove audible distortion. No audio was cut to fit.
 
 These were sequential feasibility runs with different measurement scopes and
-single/two-voice casting, not a blinded quality verdict. Pronunciation, expression,
-intelligibility and speaker continuity remain unassessed. Fish, subtitle capture,
+single/two-voice casting, not a blinded quality verdict. Preliminary operator intelligibility feedback is positive, with pacing/style concerns. Engine attribution and cue coverage are unspecified; pronunciation, expression and speaker continuity remain unscored. Fish, subtitle capture,
 character inference, duration fitting, source separation and synchronized
 playback remain unproven/unimplemented.
 
@@ -111,8 +110,11 @@ Full evidence: `output/RECEIPTS/cpu-ab-20261010-01/` (sealed locally); original
 receipt `output/RECEIPTS/initial-20261010-01/` remains unchanged.
 See `docs/CPU-VOICE-COMPARISON.md` for the metric definitions and limitations.
 
-Exact next experiment: listen to all 20 cues and annotate
-intelligibility/pronunciation/acting and two-voice consistency. If useful speech
-passes, compare Kokoro speed 1.0 versus 1.15 on the same cues in a fresh receipt;
-measure every duration change and assess degradation, with no truncation. Do not
-advance to live acquisition or claim convincing dubbing until listening passes.
+Exact next experiment: identify four awkward utterances or gaps in the playable
+tracks, then run a matched four-cue probe with identical text and placements,
+changing one stock voice or one rate setting at a time. Rate intelligibility,
+phrasing and episode-listening comfort, and measure overflow/gap changes. Choose
+the lever from the marked defect: speeding speech up can enlarge the gaps and
+should not be presumed to improve pacing. Preserve unmodified baselines and do
+not trim audio. The played engine was not specified, so the present feedback
+cannot choose a model winner. No whole episode or live acquisition yet.

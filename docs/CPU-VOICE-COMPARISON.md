@@ -2,7 +2,7 @@
 
 Both engines generated real English dialogue from the same 20 synthetic cues,
 with three complete-set warmups followed by ten measured repetitions. The
-functional path passed; no listening quality verdict is recorded yet.
+functional path passed. Operator feedback finds the played sample understandable, with concerns about pacing/style over a whole episode. Engine and sample coverage were not specified; no per-cue or numeric quality scores are recorded.
 
 | Measured result | Piper / Lessac medium | Kokoro v1.0 / Heart + Michael |
 |---|---:|---:|
@@ -61,8 +61,7 @@ Kokoro had no out-of-range float samples before PCM conversion and no measured
 stem saturation. Piper stems contained 265 PCM endpoint samples across 200
 measured utterances. Installed Piper source peak-normalizes by default; reaching
 a PCM endpoint therefore does not by itself prove damaging clipping. Mixed
-clipping was zero for both. Audible distortion, missing words, pronunciation,
-naturalness, expression and voice consistency remain unassessed. Kokoro's G2P
+clipping was zero for both. Operator feedback provides preliminary intelligibility evidence, but no engine attribution or full-cue coverage. Audible distortion, missing words, pronunciation, expression and voice consistency remain unscored; episode-length pacing/style is an explicit concern. Kokoro's G2P
 fallback loaded and the runner rejected missing phonemes on alphabetic tokens;
 that check does not substitute for listening or establish every word is correct.
 
@@ -84,7 +83,7 @@ MP3s are convenience listening copies; measured artifacts are WAVs. A simple
 standard-library static server serves only the listening folder. The player
 names engines; use A/B files and the separate assignment key for blind scoring.
 HTTP responses and WAV decoding were checked. Firefox requested the WAVs, but
-operator confirmed successful audio playback from the explicit-control player. Listening quality ratings remain pending. A read-only audio
+operator confirmed successful audio playback from the explicit-control player. Operator found the sample understandable but questioned pacing/style for a whole episode; detailed ratings remain pending. A read-only audio
 routing snapshot is retained locally. No system audio settings were changed.
 
 Receipt: `output/RECEIPTS/cpu-ab-20261010-01/`, with commands, failed attempt,
@@ -92,7 +91,7 @@ model/package/source hashes, raw metrics, resource samples, all 42 manifest
 validations, before/after smoke output, and a listening bundle. Earlier receipts
 remain unchanged.
 
-GO for listening and a small timing-control experiment if intelligibility passes.
+GO for a small phrasing/pause comparison informed by the preliminary listening feedback.
 Keep Piper as the lightweight functional baseline and Kokoro as the two-voice
 candidate. NO-GO for declaring a quality winner, auto-casting, live capture or
 Fish loading while the discrete cards remain occupied.
