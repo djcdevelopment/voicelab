@@ -1,126 +1,116 @@
-# Subtitle Lab — Local AI Dubbing R&D
+# Voice Lab
 
-**Current checkout:** use this existing repository in place. The starter archive
-originally targeted `/work/subtitle` on the Linux machine with **dual Intel Arc Pro B70 32 GB**, **Core Ultra 9 285K**, **128 GB DDR5**, and an Intel NPU.
+A local text-to-speech tool and a lab for tuning voices for narration and podcasts.
+Paste text, hear it spoken, adjust the delivery, and keep the settings that work.
 
-**Mission:** Find the shortest credible path from timed English subtitles to a locally generated, scene-synchronized English dialogue track. After proving an offline run, investigate acquiring **visible** subtitles from browser playback via accessible tracks or OCR, and subsequently experimental live dubbing. This is a personal R&D project, **not a commercial product**.
+Voice Lab runs on Linux with a .NET 10 / Blazor browser interface and Python speech
+engines. Speech runs locally on CPU. This is a personal R&D tool with a working
+paste-and-listen workflow.
 
-**Voice Lab:** a local .NET browser app for pasting text, generating CPU speech,
-tuning voice/speed/paragraph gaps, comparing A/B results, and keeping presets and
-history. Start with `./scripts/voice-lab.sh`, then open
-<http://127.0.0.1:18581/>. On a fresh checkout first run
-`./scripts/setup-voice-lab.sh`; speech still requires the existing isolated
-environments and models. See [operator instructions](docs/OPERATOR.md#voice-lab-paste-listen-tune)
-for the browser and direct text CLI workflows.
+## What works today
 
-**Subtitle pipeline:** an offline experiment bench with real CPU Piper/Kokoro speech,
-manual casting, measured timing, opt-in capped tempo fitting, authorized local
-text-track extraction, and synchronized MP4 playback. Synthetic media passes
-pause/seek/caption checks. Operator found speech understandable but questioned
-pacing/style for a whole episode. Latest excerpt preferences favor Bella for
-fitted short dialogue and Heart for normal-speed conversation. Fish XPU, automatic character casting, original
-soundtrack separation and live capture remain open. See [HANDOFF](docs/HANDOFF.md)
-for runnable commands and complete playback links.
+- Paste English text in the browser or pipe it through the CLI.
+- Generate speech with Kokoro (Heart, Bella, Michael) or Piper (Lessac).
+- Adjust synthesis speed and added pauses between paragraphs.
+- Pin a result for A/B listening, record a preference, and save named presets.
+- Replay, seek, download WAVs, and revisit local history.
+- Cancel generation and recover interrupted requests after an app restart.
+- Keep reproducible receipts with source text, settings, model/package versions,
+  timings, original audio, and checksums.
 
-## Contents
+The repository also contains the earlier subtitle experiment pipeline: SRT/VTT/ASS
+parsing, manual voice casting, duration fitting, and offline synchronized playback.
 
-- `src/subtitle_lab/`: deterministic parsing, audio stem generation, WAV composition, diagnostics, receipt validation, CLI.
-- `samples/`: synthetic text/timing fixtures for SRT, WebVTT, ASS (no copyrighted material).
-- `tests/`: zero-dependency `unittest` suite.
-- `scripts/smoke.sh`: tests, render, and receipt verification.
-- `docs/`: design boundaries, hardware questions, evaluation gates, references.
-- `prompts/BUILDER-PROMPT.md`: self-contained handoff to a cold engineering agent.
+## Run the app
 
-## Original starter archive setup (historical)
-
-The existing checkout is already initialized; the instructions below apply only
-to a fresh starter archive. The archive has **no enclosing top-level directory**. Extract its contents into `/work/subtitle`:
+Prerequisites: Linux, Python 3, `curl`, and separately prepared speech environments
+and models. The setup script installs the pinned .NET SDK inside this checkout;
+**it does not install speech packages or download voices**.
 
 ```bash
-# Set this to the downloaded zip's actual location:
-ZIP="$HOME/Downloads/subtitle-starter.zip"
+git clone https://github.com/djcdevelopment/voicelab.git
+cd voicelab
+./scripts/setup-voice-lab.sh
+./scripts/voice-lab.sh
+```
 
-# /work may require one-time permission setup. Do NOT run the project itself as root.
-sudo install -d -o "$USER" -g "$(id -gn)" /work/subtitle
-unzip -q "$ZIP" -d /work/subtitle
-cd /work/subtitle
+Open **http://127.0.0.1:18581/**. Use `--port 18583` to choose another port.
+Ctrl+C stops the app and its active speech worker.
+
+The current app expects these local resources:
+
+| Engine | Python environment | Model files |
+| --- | --- | --- |
+| Kokoro | `.venv-kokoro/bin/python` | `models/kokoro/` with config, weights, and stock voice files |
+| Piper | `.venv/bin/python` plus `.venv/bin/ffmpeg` | `models/piper/en_US-lessac-medium.onnx` and its `.onnx.json` |
+
+Speech setup is currently manual. See the [handoff](docs/HANDOFF.md) for recorded
+CPU setup/version details and [backend notes](docs/TTS-BACKENDS.md) for integration
+background. Unavailable engines are disabled in the app. Environments, model
+weights, and generated output are not included in the repository.
+
+## Use it
+
+1. Paste an excerpt and start with **Kokoro / Heart / 1.00× / 250 ms**.
+2. Click **Generate speech** or press **Ctrl+Enter**, then press Play.
+3. **Pin as A**, change one setting, generate again, and compare.
+4. Optionally add a listening note. Use a result's **Use settings** button before
+   saving those controls as a preset.
+
+Blank lines separate paragraphs. The paragraph-gap control adds silence between
+them while preserving natural pauses and complete speech. Editing controls during
+generation prepares the next request; it does not alter the active result.
+
+## Paste from the CLI
+
+With the Kokoro environment and model prepared, run from the repository root:
+
+```bash
+export PYTHONPATH="$PWD/src"
+.venv-kokoro/bin/python -m subtitle_lab speak \
+  --text-file - --engine kokoro --voice af_heart --speed 1.0 \
+  --paragraph-pause-ms 250 --out output/RECEIPTS/my-text-01
+```
+
+Paste your text, then press **Ctrl+D** on an empty line. Open
+`output/RECEIPTS/my-text-01/speech.wav` to listen. Replace `--text-file -` with a
+UTF-8 file path to read from a file. Choose a new output directory for each run.
+
+```bash
+python3 -m subtitle_lab validate output/RECEIPTS/my-text-01
+```
+
+## Local data and current limits
+
+Generated text/audio and immutable run receipts live under `output/RECEIPTS/`.
+Presets and listening notes live under `output/voice-lab/`. These folders, models,
+virtual environments, and caches are git-ignored. The browser draft is stored in
+the current tab's session storage; history and presets survive app restarts.
+
+The first version supports up to **5,000 characters per request**, one generation
+at a time, and complete generation before playback. Each request loads a fresh
+model worker, so startup contributes to the wait. Listening preferences are
+subjective; automated checks do not establish voice quality. GPU inference,
+expressive emotion controls, voice cloning, long-document streaming, and live
+subtitle capture remain future experiments.
+
+## Development and verification
+
+```bash
 ./scripts/smoke.sh
 ```
 
-Or create `/work/subtitle` using an existing writable `/work` without `sudo`. If the zip has been renamed by the browser, update `ZIP` accordingly. Nothing in the scripts modifies system packages or GPU drivers.
+The smoke path uses only Python's standard library; optional integrations skip
+when their dependencies are absent. The current implementation has 38 tests,
+with all 38 passing in the prepared optional environment. Chromium checks also
+cover the browser workflow and real Heart, Bella, and Piper generation.
 
-## Direct CLI commands (Python standard library only)
+See [operator instructions](docs/OPERATOR.md) for browser verification commands,
+[architecture](docs/ARCHITECTURE.md) for the implementation, and the
+[handoff](docs/HANDOFF.md) for measured results and remaining work.
 
-Run from the repo root:
+## License
 
-```bash
-export PYTHONPATH="$PWD/src"
-python3 -m subtitle_lab doctor --out output/doctor-first.json
-python3 -m subtitle_lab inspect samples/demo.vtt
-python3 -m subtitle_lab inspect samples/demo.ass
-python3 -m subtitle_lab render samples/demo.srt --engine tone --out output/first-tone
-python3 -m subtitle_lab validate output/first-tone
-ffplay -autoexit output/first-tone/dub.wav  # optional; audible tones only
-```
-
-You can also run `python3 -m unittest discover -s tests -v`, or install editable with `pip install -e .` in a virtual environment if desired. No installation is needed for the `PYTHONPATH` workflow.
-
-Every render deliberately **refuses to overwrite** an existing output directory. Use a new output name per experiment.
-
-## First real speech: Piper HTTP (optional)
-
-The current Piper project supports a local HTTP service; see `docs/TTS-BACKENDS.md`. With a voice downloaded and its local service running, run:
-
-```bash
-export PYTHONPATH="$PWD/src"
-python3 -m subtitle_lab render samples/demo.srt \
-  --engine piper-http \
-  --piper-url http://127.0.0.1:5000/synthesize \
-  --out output/demo-piper-01
-python3 -m subtitle_lab validate output/demo-piper-01
-```
-
-The TTS output may be 22050 Hz. Install `ffmpeg` to convert to this harness's 24000 Hz mono PCM16 track. Per-cue original WAV stems remain in the output directory. **Piper HTTP may synthesize a plain single voice**, which is a functional baseline, not character-aware dubbing.
-
-## Bring audio generated by any model
-
-Produce one WAV per cue: `0001.wav`, `0002.wav`, etc., in your own directory (`/work/subtitle/local_media/voice-stems` is ignored by git). Then:
-
-```bash
-python3 -m subtitle_lab render samples/demo.srt --engine wav-dir \
-  --wav-dir local_media/voice-stems --out output/external-model-01
-```
-
-This intentionally gives Fish S2, a future TTS server, or another model a low-friction insertion point **without patching the mixer**.
-
-## What outputs are generated?
-
-For each run under `output/<run-name>/`:
-
-- `dub.wav`: simple mono mixed dialogue track, timestamp aligned to subtitle starts.
-- `stems/0001.wav`, etc.: original voice/tone output for each cue.
-- `cues.json`: parsed normalized cue records.
-- `transcript.txt`: text plus timing.
-- `manifest.json`: input SHA256, stem SHA256, model/backend name, wall time, duration/slack/overrun/overlap/clipping metrics.
-- `report.md`: operator-facing summary and explicit known limits.
-
-Opt-in `--fit-max-speedup 1.15` preserves original stems and reports remaining
-overflow; it does not guarantee dialogue fit or improve acting. `compose` accepts
-an explicitly prepared background WAV, discards original source audio, and muxes
-one shared media clock. It does not separate Japanese dialogue from music.
-Force alignment, voice cloning, automatic character identification, screen
-capture and live platform integration remain future gates.
-
-## Design posture
-
-1. **Borrow before build:** evaluate available software, published APIs, existing models, and installed serving infrastructure before writing a custom stack.
-2. **Keep actual evidence:** commands, hardware topology, logs, checksums, latency, audio clips, supported/unsupported claims.
-3. **Don't infer memory pooling:** these are **two independent 32 GB GPUs**, not one automatically pooled 64 GB GPU. The iGPU may appear as its own XPU device. Map indices explicitly.
-4. **Preserve the workstation:** diagnostics are read-only; any new models/drivers/services must avoid disrupting existing inference servers.
-5. **Use authorized content:** work from synthetic inputs or subtitle/media you are permitted to access. No circumvention of DRM, account controls, or platform authentication.
-
-Begin with `docs/GATES.md`, `docs/HARDWARE.md`, and `prompts/BUILDER-PROMPT.md`.
-
-Session closeout: [retrospective](docs/RETROSPECTIVE-20261010.md),
-[CPU speech and evidence decision](docs/adr/0001-cpu-speech-and-evidence-gates.md),
-and [completion audit](docs/COMPLETION-AUDIT.md).
+Project code is licensed under the [MIT License](LICENSE). Bundled Bootstrap
+includes its own [MIT notice](app/VoiceLab/wwwroot/lib/bootstrap/LICENSE).
+Speech engines and model weights retain their upstream licenses.
