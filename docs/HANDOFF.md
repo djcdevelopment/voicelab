@@ -1,4 +1,56 @@
-# Subtitle Lab handoff — offline pipeline slice
+# Subtitle Lab handoff — Voice Lab, 2026-10-15
+
+Voice Lab is implemented as a local .NET 10 / Blazor app. Start it from this
+checkout with `./scripts/voice-lab.sh` and open **http://127.0.0.1:18581/**.
+The SDK is installed inside `.cache/dotnet` and pinned to 10.0.402. Fresh checkouts
+use `./scripts/setup-voice-lab.sh`; existing speech environments/models remain
+separate prerequisites. Full usage and the direct paste CLI are in
+[OPERATOR](OPERATOR.md#voice-lab-paste-listen-tune).
+
+Implemented: paste up to 5,000 characters; Heart/Bella/Michael or Piper Lessac;
+synthesis speed; added paragraph gaps; explicit generation; play/pause/seek/replay;
+WAV download; pinned A/B comparison; differing-text/settings labels; optional
+preference notes; named presets; persistent local history; cancellation; and
+immutable request receipts. The plain-text path preserves all generated speech
+and leaves the subtitle pipeline's timing rules unchanged.
+
+Verification: stdlib smoke passes (38 tests, 12 optional skips); all 38 pass with
+the existing optional environment. .NET builds with zero warnings/errors.
+Chromium verifies the full workflow, mobile layout, dark mode, audio range
+requests, settings propagation and real Heart/Bella/Piper synthesis. A separate
+fault fixture proves missing-engine display and visible worker errors with failed
+receipts. Lifecycle checks prove browser refresh during generation, preset/history
+survival across restart, worker exit after app crash, sealed interrupted requests,
+and successful real speech after recovery.
+
+Evidence (local, ignored by git):
+
+- `output/RECEIPTS/voice-lab-build-20261015-01/`: build, tests, failure/lifecycle
+  probes, environment, commands and final summary.
+- `output/RECEIPTS/voice-lab-browser-20261015-02/`: successful browser workflow,
+  exact generated run IDs, desktop/mobile/dark screenshots.
+- `output/RECEIPTS/voice-lab-browser-20261015-01/`: preserved initial launch failure.
+  Loading static web assets explicitly fixed the observed non-development launch.
+
+For one 93-character excerpt, waits were 9.24 s for the first Heart request,
+4.91 s for Bella, 4.74 s for Bella at 1.10×, and 1.58 s for Piper. These are
+individual observations, not a benchmark or voice-quality verdict. Audio is muted
+in automation; operator listening remains pending. Each request starts a fresh
+worker. If this wait interrupts tuning, the next latency probe is a resident
+CPU model worker with unchanged text/settings and separately measured startup.
+
+HEARTH's bounded CSS code_fix dispatch was refused before inference because its
+exact tokenizer endpoint returned HTTP 503. No candidate was produced, no cloud
+substitute was dispatched, and no verdict was fabricated. The app uses the .NET
+template's stock Bootstrap 5.3.3 assets with their MIT license. Integration was
+performed by the frontier caller; build receipt `br-20261015-185823-6e0bb801` lives
+under `output/hearth-build/`.
+
+Posture remains R&D. Next useful operator action: paste an actual excerpt, compare
+Heart and Bella at the same speed, then change one control and note whether it
+helps. No broader hardening or GPU/backend changes were performed.
+
+## Earlier handoff — offline pipeline slice
 
 Real local CPU speech, explicit manual casting and an offline caption-to-video
 chain work on authored fixtures. Preliminary operator feedback: understandable,

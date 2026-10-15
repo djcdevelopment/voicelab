@@ -20,3 +20,5 @@ local_media/
 .env
 .env.*
 !*.example
+**/bin/
+**/obj/

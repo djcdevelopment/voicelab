@@ -14,7 +14,12 @@ real-source evidence. Detailed receipts remain local and ignored by git.
 | G6 | Authored video text track: all 20 cues exact, then real speech synthesis; explicit nonzero-origin mapping tested | 26 published CC BY captions parsed/synthesized; matching full-film video unavailable; browser/OCR not implemented |
 | G7 | Synthetic offline MP4: shared clock, play/pause, seeks both ways and active captions pass Chromium automation | Human Firefox video/audio review; real soundtrack separation and live sync absent |
 
-The latest suite has 35 tests (optional media/HTTP integrations skip on a bare
+Voice Lab adds a plain-text UI alongside these subtitle gates. Its CPU browser
+workflow, A/B audio controls, presets/history, cancellation and real Heart/Bella/
+Piper generation have Chromium evidence; human listening quality remains unscored.
+Details and limitations are in the current handoff.
+
+The latest suite has 38 tests (optional media/HTTP integrations skip on a bare
 stdlib host). Unchanged smoke remains runnable without installing speech models.
 
 ## First cold-builder work session

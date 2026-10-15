@@ -1,5 +1,35 @@
 # Architecture — stages, contracts, and exclusions
 
+## Voice Lab plain-text app
+
+`app/VoiceLab` is an ASP.NET Core / Blazor Interactive Server application, using
+stock locally bundled Bootstrap 5.3.3 and native browser audio. The SDK is pinned
+in `global.json`; launch/setup scripts keep SDK, NuGet, data-protection keys and
+caches inside this checkout. The host accepts loopback, same-origin browser work.
+
+The singleton C# speech coordinator freezes a `SpeechRequest` (text, engine, voice,
+speed, paragraph gap), then launches the matching isolated Python interpreter via
+argument arrays. The shared `subtitle_lab speak` CLI implements plain-text speech
+in `speech.py`, reusing existing engines, WAV normalization, hashes and diagnostics.
+It preserves full paragraph stems and concatenates measured samples with inserted
+silence. Plain-text manifests use `subtitle-lab-speech-v1`; existing render v1/v2
+receipts and subtitle timing behavior are unchanged. `validate` dispatches by schema.
+
+There is one generation and one library writer per repo. Browser circuits observe
+the active job rather than owning it. Cancellation kills the owned process tree;
+the Linux worker also binds its lifetime to the coordinator. A dedicated creating
+thread stays alive through synthesis because Linux parent-death signals are tied
+to that thread. Interrupted staged requests are sealed on the next startup, never
+silently rerun. Every run uses a fresh child; resident model serving remains a
+future latency experiment.
+
+The app finalizes each staging directory into a unique immutable receipt with
+request snapshots, stdout/stderr, commands, audio and hashes. Mutable preset and
+feedback JSON is atomically replaced separately. History reads finalized app
+receipts; the draft uses browser session storage. Audio is served by ID with HTTP
+Range support, not through arbitrary filesystem paths. No accounts, database,
+cloud inference, GPU changes or external hosting are involved.
+
 ## Current vertical slice (implemented)
 
 ```text

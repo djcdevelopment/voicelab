@@ -5,7 +5,15 @@ originally targeted `/work/subtitle` on the Linux machine with **dual Intel Arc 
 
 **Mission:** Find the shortest credible path from timed English subtitles to a locally generated, scene-synchronized English dialogue track. After proving an offline run, investigate acquiring **visible** subtitles from browser playback via accessible tracks or OCR, and subsequently experimental live dubbing. This is a personal R&D project, **not a commercial product**.
 
-**Current state:** an offline experiment bench with real CPU Piper/Kokoro speech,
+**Voice Lab:** a local .NET browser app for pasting text, generating CPU speech,
+tuning voice/speed/paragraph gaps, comparing A/B results, and keeping presets and
+history. Start with `./scripts/voice-lab.sh`, then open
+<http://127.0.0.1:18581/>. On a fresh checkout first run
+`./scripts/setup-voice-lab.sh`; speech still requires the existing isolated
+environments and models. See [operator instructions](docs/OPERATOR.md#voice-lab-paste-listen-tune)
+for the browser and direct text CLI workflows.
+
+**Subtitle pipeline:** an offline experiment bench with real CPU Piper/Kokoro speech,
 manual casting, measured timing, opt-in capped tempo fitting, authorized local
 text-track extraction, and synchronized MP4 playback. Synthetic media passes
 pause/seek/caption checks. Operator found speech understandable but questioned

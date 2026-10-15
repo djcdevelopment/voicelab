@@ -1,0 +1,211 @@
+@page "/"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@implements IAsyncDisposable
+@inject SpeechService Speech
+@inject IJSRuntime JS
+@using System.Text
+
+<PageTitle>Voice Lab · Paste, listen, tune</PageTitle>
+<div class="container-xxl py-4 px-3 px-md-4">
+    <header class="d-flex justify-content-between align-items-center gap-3 border-bottom pb-3 mb-4">
+        <div><div class="text-uppercase small text-secondary fw-semibold">A local listening workspace</div>
+            <h1 class="h2 mb-1">Voice Lab</h1><p class="text-secondary mb-0">Paste something. Find how you like to hear it.</p></div>
+        <span class="badge rounded-pill text-bg-secondary" role="status" data-testid="status">@(active is null ? "Ready · CPU" : "Generating · CPU")</span>
+    </header>
+    @if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
+    @if (notice is not null) { <div class="alert alert-success" role="status">@notice</div> }
+    @if (Speech.StorageWarning is not null) { <div class="alert alert-warning" role="alert">@Speech.StorageWarning</div> }
+    <div class="row g-4">
+        <aside class="col-xl-3">
+            <details open class="card">
+                <summary class="card-header fw-semibold">Listening history <span class="badge text-bg-secondary">@history.Count</span></summary>
+                <div class="card-body">
+                    <label class="form-label small" for="history-filter">Find text or voice</label>
+                    <input id="history-filter" class="form-control form-control-sm mb-3" @bind="filter" @bind:event="oninput" />
+                    <div class="list-group overflow-auto" style="max-height: 60vh" data-testid="history">
+                        @foreach (var item in FilteredHistory)
+                        {
+                            <button class="list-group-item list-group-item-action @(current?.Id == item.Id ? "active" : "")" @onclick="() => Select(item)">
+                                <span class="d-block text-truncate">@Excerpt(item.Request.Text)</span>
+                                <small class="d-block">@Label(item.Request) · @item.Request.Speed.ToString("0.00")×</small>
+                                <small>@item.CreatedUtc.ToLocalTime().ToString("MMM d, HH:mm") · @item.Status</small>
+                            </button>
+                        }
+                    </div>
+                    @if (history.Count == 0) { <p class="text-secondary small mb-0">Your generated audio will appear here. Text, audio, and settings stay on this machine.</p> }
+                </div>
+            </details>
+        </aside>
+        <main class="col-xl-9">
+            <div class="row g-3 mb-3">
+                <section class="col-lg-8" aria-labelledby="text-label">
+                    <div class="card h-100"><div class="card-body">
+                        <label id="text-label" for="text" class="form-label fw-semibold">Your text</label>
+                        <textarea id="text" class="form-control" rows="12" placeholder="Paste a paragraph, a scene, or something you want to hear…" @bind="text" @bind:event="oninput" @bind:after="PersistDraft" aria-describedby="text-help"></textarea>
+                        <div class="d-flex justify-content-between flex-wrap gap-2 mt-2 text-secondary small" id="text-help">
+                            <span>Blank lines separate paragraphs. Ctrl+Enter generates.</span>
+                            <span class="@(CharacterCount > 5000 ? "text-danger" : "")">@CharacterCount.ToString("N0") / 5,000</span>
+                        </div>
+                    </div></div>
+                </section>
+                <section class="col-lg-4" aria-label="Voice settings">
+                    <div class="card h-100"><div class="card-body">
+                        <h2 class="h6 mb-3">Voice settings</h2>
+                        <label for="engine" class="form-label">Engine</label>
+                        <select id="engine" class="form-select mb-3" @bind="engine" @bind:after="EngineChanged">
+                            @foreach (var e in engines) { <option value="@e.Id" disabled="@(!e.Available)">@e.Name@(!e.Available ? " · unavailable" : "")</option> }
+                        </select>
+                        <label for="voice" class="form-label">Voice</label>
+                        <select id="voice" class="form-select mb-3" @bind="voice" @bind:after="PersistDraft" disabled="@(engine != "kokoro")">
+                            @if (engine == "kokoro") { @foreach (var v in Voices) { <option value="@v.Id">@v.Name</option> } }
+                            else { <option value="">@(engine == "tone" ? "Diagnostic tone" : "Lessac")</option> }
+                        </select>
+                        <label for="speed" class="form-label">Speech speed <strong>@speed.ToString("0.00")×</strong></label>
+                        <input id="speed" class="form-range" type="range" min="0.5" max="2" step="0.05" @bind="speed" @bind:event="oninput" @bind:after="PersistDraft" />
+                        <label for="gap" class="form-label mt-2">Paragraph gap <strong>@gap ms</strong></label>
+                        <input id="gap" class="form-range" type="range" min="0" max="1500" step="50" @bind="gap" @bind:event="oninput" @bind:after="PersistDraft" />
+                        <p class="small text-secondary mb-0">Adds silence between paragraphs. Natural pauses remain.</p>
+                    </div></div>
+                </section>
+            </div>
+            <div class="d-flex gap-2 flex-wrap align-items-center mb-4">
+                <button id="generate" class="btn btn-success px-4" @onclick="Generate" disabled="@(active is not null || !CanGenerate)">Generate speech</button>
+                <button id="cancel" class="btn btn-outline-danger" @onclick="Cancel" disabled="@(active is null)">Cancel</button>
+                @if (active is not null) { <span class="small text-secondary" aria-live="polite">Loading voice and generating · @((DateTimeOffset.UtcNow - active.CreatedUtc).TotalSeconds.ToString("0")) s. You can edit the next version.</span> }
+                else { <span class="small text-secondary">Generate, then press Play to listen.</span> }
+            </div>
+            @foreach (var unavailable in engines.Where(e => !e.Available)) { <p class="small text-warning">@unavailable.Name: @unavailable.Reason</p> }
+            @if (baseline is not null && current is not null)
+            {
+                <div class="alert @(baseline.Request.Text == current.Request.Text ? "alert-secondary" : "alert-warning") py-2 small" data-testid="comparison">
+                    @(baseline.Request.Text == current.Request.Text ? "Same text" : "Different text — this is not a matched trial") · @Differences()
+                </div>
+            }
+            <div class="row g-3 mb-3">
+                <div class="col-md-6"><ResultCard Run="baseline" Title="A · Pinned comparison" OnRestore="Restore" OnSettings="UseSettings" /></div>
+                <div class="col-md-6"><ResultCard Run="current" Title="B · Current result" OnPin="Pin" OnRestore="Restore" OnSettings="UseSettings" /></div>
+            </div>
+            <section class="card mb-3" aria-labelledby="feedback-title"><div class="card-body">
+                <h2 id="feedback-title" class="h6">What sounds better?</h2>
+                <label for="note" class="form-label small text-secondary">Optional listening note</label>
+                <textarea id="note" class="form-control mb-2" rows="2" maxlength="2000" @bind="note" @bind:event="oninput" placeholder="Clearer phrasing, too much emphasis, a word to revisit…"></textarea>
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" disabled="@(!CanCompare)" @onclick='() => Prefer("A")'>Prefer A</button>
+                    <button class="btn btn-outline-secondary btn-sm" disabled="@(!CanCompare)" @onclick='() => Prefer("B")'>Prefer B</button>
+                    <button class="btn btn-outline-secondary btn-sm" disabled="@(!CanCompare)" @onclick='() => Prefer("same")'>No clear difference</button>
+                </div>
+                @foreach (var feedback in MatchingFeedback.TakeLast(3)) { <p class="small text-secondary mt-2 mb-0">@(feedback.Preference == "same" ? "No clear difference" : $"Preferred {feedback.Preference}") · @feedback.Note</p> }
+            </div></section>
+            <section class="card" aria-labelledby="preset-title"><div class="card-body">
+                <h2 id="preset-title" class="h6">Keep useful settings</h2>
+                <p class="small text-secondary">Save the editor settings as a preset. Use a result’s “Use settings” button to copy its exact controls first.</p>
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-5"><label class="form-label small" for="presets">Saved presets</label>
+                        <select id="presets" class="form-select" @onchange="LoadPreset"><option value="">Choose a preset…</option>
+                            @foreach (var p in library.Presets) { <option value="@p.Id">@p.Name</option> }
+                        </select></div>
+                    <div class="col-md-4"><label for="preset-name" class="form-label small">New preset name</label><input id="preset-name" class="form-control" maxlength="80" @bind="presetName" @bind:event="oninput" /></div>
+                    <div class="col-md-3"><button class="btn btn-outline-success w-100" id="save-preset" @onclick="SavePreset" disabled="@(string.IsNullOrWhiteSpace(presetName))">Save preset</button></div>
+                </div>
+            </div></section>
+            <footer class="text-secondary small mt-4">Local CPU speech · Full utterances preserved · Listening preferences are subjective</footer>
+        </main>
+    </div>
+</div>
+
+@code {
+    private string text = "", engine = "kokoro", voice = "af_heart", filter = "", note = "", presetName = "";
+    private double speed = 1;
+    private int gap = 250;
+    private string? error, notice, submitted;
+    private SpeechRun? active, current, baseline;
+    private List<SpeechRun> history = [];
+    private List<EngineChoice> engines = [];
+    private LibraryState library = new([], []);
+    private readonly CancellationTokenSource lifetime = new();
+    private Task? poll;
+    private bool ready;
+    private int CharacterCount => text.EnumerateRunes().Count();
+    private IEnumerable<VoiceChoice> Voices => engines.FirstOrDefault(e => e.Id == engine)?.Voices ?? [];
+    private SpeechRequest Request => new(text, engine, engine == "kokoro" ? voice : null, speed, gap);
+    private bool CanGenerate => !string.IsNullOrWhiteSpace(text) && CharacterCount <= 5000 && engines.Any(e => e.Id == engine && e.Available);
+    private bool CanCompare => baseline?.Status == "completed" && current?.Status == "completed" && baseline.Id != current.Id;
+    private IEnumerable<SpeechRun> FilteredHistory => history.Where(r => (r.Request.Text + " " + Label(r.Request)).Contains(filter, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<Feedback> MatchingFeedback => library.Feedback.Where(f => f.A == baseline?.Id && f.B == current?.Id);
+    public static string Label(SpeechRequest r) => r.Engine == "kokoro" ? r.Voice switch { "af_heart" => "Heart", "af_bella" => "Bella", "am_michael" => "Michael", _ => r.Voice ?? "Kokoro" } : r.Engine == "tone" ? "Diagnostic tone" : "Piper Lessac";
+    private static string Excerpt(string value) => value.Length > 65 ? value[..65] + "…" : value;
+
+    protected override void OnInitialized()
+    {
+        engines = Speech.Engines(); history = Speech.History(); library = Speech.Library;
+        current = history.FirstOrDefault(); active = Speech.Active;
+        submitted = active?.Id;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var draft = await JS.InvokeAsync<SpeechRequest?>("voiceLab.readDraft");
+        if (draft is not null) Apply(draft);
+        ready = true;
+        poll = Poll();
+        StateHasChanged();
+    }
+    private async Task Poll()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
+        try { while (await timer.WaitForNextTickAsync(lifetime.Token)) await InvokeAsync(() => {
+            var before = active?.Id; active = Speech.Active;
+            if (active is not null && submitted is null) submitted = active.Id;
+            if (before is not null && active is null) {
+                history = Speech.History();
+                current = history.FirstOrDefault(r => r.Id == submitted) ?? current;
+                submitted = null;
+            }
+            library = Speech.Library;
+            StateHasChanged();
+        }); } catch (OperationCanceledException) { }
+    }
+    private async Task PersistDraft() { if (ready) await JS.InvokeVoidAsync("voiceLab.saveDraft", Request); }
+    private async Task EngineChanged() { voice = engine == "kokoro" ? "af_heart" : ""; await PersistDraft(); }
+    private void Generate()
+    {
+        error = notice = null;
+        try { active = Speech.Start(Request); submitted = active.Id; }
+        catch (Exception ex) { error = ex.Message; }
+    }
+    private void Cancel() { Speech.Cancel(); notice = "Canceling generation…"; }
+    private void Select(SpeechRun run) { current = run; error = notice = null; }
+    private void Pin(SpeechRun run) { baseline = run; notice = "Pinned as comparison A. Change a setting and generate B."; }
+    private void Apply(SpeechRequest r) { text = r.Text; engine = r.Engine; voice = r.Voice ?? ""; speed = r.Speed; gap = r.ParagraphPauseMs; }
+    private async Task Restore(SpeechRun run) { Apply(run.Request); await PersistDraft(); notice = "Text and settings restored."; }
+    private async Task UseSettings(SpeechRun run) { Apply(run.Request with { Text = text }); await PersistDraft(); notice = "Result settings copied to the editor."; }
+    private async Task LoadPreset(ChangeEventArgs args)
+    {
+        var p = library.Presets.FirstOrDefault(p => p.Id == args.Value?.ToString());
+        if (p is null) return;
+        Apply(new(text, p.Engine, p.Voice, p.Speed, p.ParagraphPauseMs));
+        await PersistDraft(); notice = $"Loaded {p.Name}.";
+    }
+    private void SavePreset()
+    {
+        error = notice = null;
+        try { Speech.SavePreset(presetName, Request with { Text = "Preset settings" }); library = Speech.Library; notice = $"Saved preset: {presetName.Trim()}."; presetName = ""; }
+        catch (Exception ex) { error = ex.Message; }
+    }
+    private void Prefer(string preference)
+    {
+        error = notice = null;
+        try { Speech.SaveFeedback(baseline!.Id, current!.Id, preference, note); library = Speech.Library; notice = "Listening preference saved."; note = ""; }
+        catch (Exception ex) { error = ex.Message; }
+    }
+    private string Differences()
+    {
+        if (baseline is null || current is null) return "";
+        var a = baseline.Request; var b = current.Request; var changes = new List<string>();
+        if (a.Engine != b.Engine || a.Voice != b.Voice) changes.Add($"{Label(a)} → {Label(b)}");
+        if (a.Speed != b.Speed) changes.Add($"speed {a.Speed:0.00}× → {b.Speed:0.00}×");
+        if (a.ParagraphPauseMs != b.ParagraphPauseMs) changes.Add($"gap {a.ParagraphPauseMs} → {b.ParagraphPauseMs} ms");
+        return changes.Count == 0 ? "Same settings" : string.Join(" · ", changes);
+    }
+    public async ValueTask DisposeAsync() { lifetime.Cancel(); if (poll is not null) await poll; lifetime.Dispose(); }
+}

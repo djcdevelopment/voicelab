@@ -26,6 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     speaker.add_argument('--model', type=Path, default=Path('models/piper/en_US-lessac-medium.onnx'))
     speaker.add_argument('--model-dir', type=Path, default=Path('models/kokoro'))
     speaker.add_argument('--out', type=Path, required=True)
+    speaker.add_argument('--parent-pid', type=int, help=argparse.SUPPRESS)
     diag = commands.add_parser("doctor", help="Read-only local Intel/GPU/tool discovery")
     diag.add_argument("--out", type=Path)
     inspect = commands.add_parser("inspect", help="Parse SRT/VTT/ASS and report cue stats")
@@ -80,6 +81,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == 'speak':
+            if args.parent_pid is not None:
+                # App-owned Linux child must not outlive a crashed coordinator.
+                import ctypes
+                import os
+                import signal
+                if not sys.platform.startswith('linux'):
+                    raise RuntimeError('Parent lifetime binding requires Linux')
+                libc = ctypes.CDLL(None, use_errno=True)
+                if libc.prctl(1, signal.SIGTERM, 0, 0, 0) != 0:
+                    raise OSError(ctypes.get_errno(), 'Unable to bind speech process lifetime')
+                if os.getppid() != args.parent_pid:
+                    raise RuntimeError('Speech coordinator exited before worker startup')
             from contextlib import redirect_stdout
             from .speech import speak
             text = sys.stdin.read(20001) if args.text_file == '-' else Path(args.text_file).read_text(encoding='utf-8')

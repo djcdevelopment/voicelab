@@ -1,0 +1,45 @@
+@inject IJSRuntime JS
+<section class="card h-100" data-testid="result" data-run-id="@Run?.Id" aria-label="@Title">
+    <div class="card-body">
+        <h2 class="h6 text-secondary">@Title</h2>
+        @if (Run is null) {
+            <p class="text-secondary py-4">@(OnPin.HasDelegate ? "Generate speech to hear your first result." : "Pin a result here to compare your next version.")</p>
+        } else {
+            <h3 class="h5">@Pages.Home.Label(Run.Request) <span class="badge text-bg-secondary fs-6">@Run.Request.Speed.ToString("0.00")×</span></h3>
+            <p class="small text-secondary">@Run.Request.ParagraphPauseMs ms paragraph gap · @Run.Status</p>
+            @if (Run.Status == "completed") {
+                <audio @key="Run.Id" id="audio-@Run.Id-@Slot" controls preload="metadata" class="w-100" src="/audio/@Run.Id" aria-label="@Title playback"></audio>
+                <div class="small text-secondary my-2">@Run.AudioSeconds.ToString("0.0") s audio · @((Run.TotalMs / 1000).ToString("0.0")) s to generate</div>
+                <div class="d-flex gap-2 flex-wrap mb-2">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="Replay">Replay</button>
+                    <a class="btn btn-outline-secondary btn-sm" href="/audio/@(Run.Id)?download=true">Download WAV</a>
+                    @if (OnPin.HasDelegate) { <button class="btn btn-outline-success btn-sm" @onclick="() => OnPin.InvokeAsync(Run)">Pin as A</button> }
+                </div>
+            }
+            @if (Run.Error is not null) { <p class="text-danger" role="alert">@Run.Error</p> }
+            <div class="d-flex gap-2 flex-wrap my-2">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="() => OnRestore.InvokeAsync(Run)">Restore text &amp; settings</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="() => OnSettings.InvokeAsync(Run)">Use settings</button>
+            </div>
+            <details class="small mt-3"><summary>Text and details</summary>
+                <p class="mt-2 text-break" style="white-space: pre-wrap">@Run.Request.Text</p>
+                <dl class="row"><dt class="col-7">Voice startup</dt><dd class="col-5">@((Run.StartupMs / 1000).ToString("0.00")) s</dd>
+                    <dt class="col-7">Speech generation</dt><dd class="col-5">@((Run.GenerationMs / 1000).ToString("0.00")) s</dd>
+                    <dt class="col-7">Generation / speech</dt><dd class="col-5">@Run.GenerationRtf.ToString("0.000")</dd>
+                    <dt class="col-7">Saturated PCM samples</dt><dd class="col-5">@Run.SaturatedSamples</dd></dl>
+                <p class="text-secondary">PCM saturation is a signal diagnostic, not a listening verdict.</p>
+                <a href="/receipt/@Run.Id" target="_blank" rel="noopener">Open receipt summary</a>
+                <p class="text-break text-secondary mt-2">output/RECEIPTS/@Run.Id</p>
+            </details>
+        }
+    </div>
+</section>
+@code {
+    [Parameter] public SpeechRun? Run { get; set; }
+    [Parameter] public string Title { get; set; } = "Result";
+    [Parameter] public EventCallback<SpeechRun> OnPin { get; set; }
+    [Parameter] public EventCallback<SpeechRun> OnRestore { get; set; }
+    [Parameter] public EventCallback<SpeechRun> OnSettings { get; set; }
+    private string Slot => OnPin.HasDelegate ? "b" : "a";
+    private async Task Replay() { if (Run is not null) await JS.InvokeVoidAsync("voiceLab.replay", $"audio-{Run.Id}-{Slot}"); }
+}
