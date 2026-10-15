@@ -16,6 +16,16 @@ from .voices import VoicePlan, VoiceSettings
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Subtitle Lab local timed-text-to-audio R&D")
     commands = parser.add_subparsers(dest="command", required=True)
+    speaker = commands.add_parser('speak', help='Turn plain UTF-8 text into complete speech')
+    speaker.add_argument('--text-file', required=True, help='UTF-8 file, or - to read pasted/piped stdin')
+    speaker.add_argument('--engine', choices=('kokoro', 'piper-local', 'tone'), default='kokoro')
+    speaker.add_argument('--voice')
+    speaker.add_argument('--speed', type=float, default=1.0)
+    speaker.add_argument('--paragraph-pause-ms', type=int, default=250)
+    speaker.add_argument('--threads', type=int, default=2)
+    speaker.add_argument('--model', type=Path, default=Path('models/piper/en_US-lessac-medium.onnx'))
+    speaker.add_argument('--model-dir', type=Path, default=Path('models/kokoro'))
+    speaker.add_argument('--out', type=Path, required=True)
     diag = commands.add_parser("doctor", help="Read-only local Intel/GPU/tool discovery")
     diag.add_argument("--out", type=Path)
     inspect = commands.add_parser("inspect", help="Parse SRT/VTT/ASS and report cue stats")
@@ -69,7 +79,16 @@ def main(argv: list[str] | None = None) -> int:
     comparison.add_argument('--out',type=Path,required=True)
     args = parser.parse_args(argv)
     try:
-        if args.command == "doctor":
+        if args.command == 'speak':
+            from contextlib import redirect_stdout
+            from .speech import speak
+            text = sys.stdin.read(20001) if args.text_file == '-' else Path(args.text_file).read_text(encoding='utf-8')
+            # Optional model libraries print progress; keep stdout machine-readable.
+            with redirect_stdout(sys.stderr):
+                result = speak(text, args.out, engine_name=args.engine, voice=args.voice,
+                               speed=args.speed, paragraph_pause_ms=args.paragraph_pause_ms,
+                               threads=args.threads, model=args.model, model_dir=args.model_dir)
+        elif args.command == "doctor":
             result = doctor()
         elif args.command == 'serve':
             from .review import serve

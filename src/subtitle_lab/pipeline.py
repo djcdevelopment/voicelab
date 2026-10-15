@@ -161,6 +161,9 @@ def validate(path: Path) -> dict:
     if path.is_dir():path=path/'manifest.json'
     manifest=json.loads(path.read_text());root=path.parent
     schema=manifest['schema_version']
+    if schema == 'subtitle-lab-speech-v1':
+        from .speech import validate_speech
+        return validate_speech(root, manifest)
     if schema not in ('subtitle-lab-render-v1','subtitle-lab-render-v2'):
         raise ValueError('Unknown manifest schema')
     expected=[(manifest['audio']['file'],manifest['audio']['sha256'])]
